@@ -20,7 +20,7 @@ function isPublic(pathname: string): boolean {
   return PUBLIC_ROUTES.includes(pathname) || pathname.startsWith("/blog/");
 }
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const token = request.cookies.get("token")?.value;
   const { pathname } = request.nextUrl;
 
