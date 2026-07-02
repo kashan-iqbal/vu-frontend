@@ -195,21 +195,23 @@ export default function CourseList({
                     </div>
 
                     {/* Primary CTA */}
-                    <div className="mt-auto  flex  flex-row gap-4">
-                      <Link
-                        href={`/Short-video/midterm-${course.code}`}
-                        className="w-full bg-teal-500 text-white px-6 py-4 rounded-lg flex items-center justify-center gap-3 font-bold shadow-sm hover:bg-teal-600 transition-all active:scale-95"
+                    <div className="mt-auto flex flex-col sm:flex-row gap-3 sm:gap-4">
+                      <button
+                        type="button"
+                        onClick={() => setComingSoonOpen(true)}
+                        className="w-full bg-teal-500 text-white px-4 py-3 sm:px-6 sm:py-4 rounded-lg flex items-center justify-center gap-2 sm:gap-3 text-sm sm:text-base font-bold shadow-sm hover:bg-teal-600 transition-all active:scale-95"
                       >
-                        <span>View Summarized Video Midterm</span>
-                        <PlayCircle className="w-5 h-5" />
-                      </Link>
-                      <Link
-                        href={`/Short-video/finalterm-${course.code}`}
-                        className="w-full bg-teal-500 text-white px-6 py-4 rounded-lg flex items-center justify-center gap-3 font-bold shadow-sm hover:bg-teal-600 transition-all active:scale-95"
+                        <PlayCircle className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
+                        <span>Midterm Video</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setComingSoonOpen(true)}
+                        className="w-full bg-teal-500 text-white px-4 py-3 sm:px-6 sm:py-4 rounded-lg flex items-center justify-center gap-2 sm:gap-3 text-sm sm:text-base font-bold shadow-sm hover:bg-teal-600 transition-all active:scale-95"
                       >
-                        <span>View Summarized Video Final term</span>
-                        <PlayCircle className="w-5 h-5" />
-                      </Link>
+                        <PlayCircle className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
+                        <span>Final Term Video</span>
+                      </button>
                     </div>
                   </div>
                 </article>

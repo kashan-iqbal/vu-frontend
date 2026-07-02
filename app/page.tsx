@@ -72,40 +72,49 @@ export default function Landing() {
           <div className="absolute inset-0 bg-linear-to-r from-white via-white/80 to-transparent"></div>
         </div>
 
-        <div className="container max-w-7xl mx-auto px-4 relative z-10 py-24 lg:py-32">
+        <div className="container max-w-7xl mx-auto px-4 relative z-10 py-12 sm:py-24 lg:py-32">
           <div className="max-w-2xl">
-            <h1 className="text-5xl lg:text-6xl font-bold text-blue-900 mb-6 leading-tight">
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-blue-900 mb-6 leading-tight">
               Master Your Exams with AI
             </h1>
-            <p className="text-xl text-slate-700 mb-8 leading-relaxed">
+            <p className="text-lg sm:text-xl text-slate-700 mb-8 leading-relaxed">
               ExamPrep AI combines intelligent tutoring, personalized MCQ
               generation, and comprehensive analytics to help you ace your
               university exams. Prepare smarter, not harder.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
-              <Button className="bg-blue-900 hover:bg-blue-800 text-white px-8 py-3 rounded-lg font-semibold transition-all duration-300 text-lg">
-                Start Free Trial
-              </Button>
-              <Link href="/course">
-                <Button className="bg-teal-500 hover:bg-teal-600 text-white px-8 py-3 rounded-lg font-semibold transition-all duration-300 text-lg">
+              <Link href="/course" className="w-full sm:w-auto">
+                <Button className="w-full bg-teal-500 hover:bg-teal-600 text-white px-8 py-3 rounded-lg font-semibold transition-all duration-300 text-lg">
                   Explore Courses
                 </Button>
               </Link>
             </div>
 
             {/* Trust Indicators */}
-            <div className="mt-12 flex flex-col sm:flex-row gap-6">
+            <div className="mt-12 flex flex-row justify-between sm:justify-start gap-4 sm:gap-10">
               <div>
-                <div className="text-3xl font-bold text-blue-900">10K+</div>
-                <div className="text-slate-600">Active Students</div>
+                <div className="text-2xl sm:text-3xl font-bold text-blue-900">
+                  10K+
+                </div>
+                <div className="text-sm sm:text-base text-slate-600">
+                  Active Students
+                </div>
               </div>
               <div>
-                <div className="text-3xl font-bold text-blue-900">95%</div>
-                <div className="text-slate-600">Success Rate</div>
+                <div className="text-2xl sm:text-3xl font-bold text-blue-900">
+                  95%
+                </div>
+                <div className="text-sm sm:text-base text-slate-600">
+                  Success Rate
+                </div>
               </div>
               <div>
-                <div className="text-3xl font-bold text-blue-900">50+</div>
-                <div className="text-slate-600">Courses Available</div>
+                <div className="text-2xl sm:text-3xl font-bold text-blue-900">
+                  50+
+                </div>
+                <div className="text-sm sm:text-base text-slate-600">
+                  Courses Available
+                </div>
               </div>
             </div>
           </div>
@@ -209,9 +218,11 @@ export default function Landing() {
             Join thousands of students who are already preparing smarter with
             ExamPrep AI
           </p>
-          <Button className="bg-teal-500 hover:bg-teal-600 text-white px-8 py-3 rounded-lg font-semibold transition-all duration-300 text-lg">
-            Get Started Free
-          </Button>
+          <Link href="/course" className="inline-block">
+            <Button className="bg-teal-500 hover:bg-teal-600 text-white px-8 py-3 rounded-lg font-semibold transition-all duration-300 text-lg">
+              Explore Courses
+            </Button>
+          </Link>
         </div>
       </section>
 

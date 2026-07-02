@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import { OtpInput } from "@/components/ui/otp-input";
 import { useRouter } from "next/navigation";
 import { BookOpen, Mail, Lock, CheckCircle, ArrowRight } from "lucide-react";
 import { useState } from "react";
@@ -208,16 +209,12 @@ export default function ForgotPasswordPage() {
                 <label className="block text-sm font-semibold text-slate-700 mb-2">
                   Verification Code
                 </label>
-                <input
-                  type="text"
+                <OtpInput
                   value={otp}
-                  onChange={(e) => {
-                    setOtp(e.target.value.replace(/\D/g, "").slice(0, 6));
+                  onChange={(v) => {
+                    setOtp(v);
                     setErrors({});
                   }}
-                  placeholder="000000"
-                  maxLength={6}
-                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-200 text-center text-2xl font-bold tracking-widest"
                 />
                 {errors.otp && (
                   <p className="mt-1 text-sm text-red-600">{errors.otp}</p>

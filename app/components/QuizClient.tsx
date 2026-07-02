@@ -86,43 +86,56 @@ export default function QuizClient({ code }: { code: string }) {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-[calc(100vh-64px)]">
-      <div className="max-w-2xl mx-auto text-center px-4">
-        <h1 className="text-4xl font-bold text-blue-900 mb-4">{detail.name}</h1>
-        <p className="text-xl text-slate-600 mb-8">{detail.description}</p>
+    <div className="flex items-center justify-center min-h-[calc(100vh-64px)] py-6 sm:py-8">
+      <div className="max-w-2xl mx-auto text-center px-4 w-full">
+        <h1 className="text-2xl sm:text-4xl font-bold text-blue-900 mb-2 sm:mb-4">
+          {detail.name}
+        </h1>
+        <p className="text-base sm:text-xl text-slate-600 mb-5 sm:mb-8">
+          {detail.description}
+        </p>
 
-        <div className="bg-slate-50 rounded-xl p-8 mb-8 border border-slate-200">
-          <div className="grid grid-cols-3 gap-6 mb-8">
+        <div className="bg-slate-50 rounded-xl p-5 sm:p-8 mb-5 sm:mb-8 border border-slate-200">
+          <div className="grid grid-cols-3 gap-3 sm:gap-6 mb-5 sm:mb-8">
             <div>
-              <div className="text-3xl font-bold text-blue-900">
+              <div className="text-2xl sm:text-3xl font-bold text-blue-900">
                 {detail.totalQuestions}
               </div>
-              <div className="text-slate-600">Questions</div>
+              <div className="text-sm sm:text-base text-slate-600">
+                Questions
+              </div>
             </div>
             <div>
-              <div className="text-3xl font-bold text-blue-900">
+              <div className="text-2xl sm:text-3xl font-bold text-blue-900">
                 {detail.durationMinutes}
               </div>
-              <div className="text-slate-600">Minutes</div>
+              <div className="text-sm sm:text-base text-slate-600">Minutes</div>
             </div>
             <div>
-              <div className="text-3xl font-bold text-blue-900">
+              <div className="text-2xl sm:text-3xl font-bold text-blue-900">
                 {detail.passScore}%
               </div>
-              <div className="text-slate-600">Pass Score</div>
+              <div className="text-sm sm:text-base text-slate-600">
+                Pass Score
+              </div>
             </div>
           </div>
 
-          <div className="text-left space-y-3">
-            <p className="font-semibold text-blue-900 mb-4">Quiz Features:</p>
+          <div className="text-left space-y-2 sm:space-y-3">
+            <p className="font-semibold text-blue-900 mb-2 sm:mb-4">
+              Quiz Features:
+            </p>
             {[
               "Instant feedback on each answer",
               "Detailed explanations for all questions",
               "Performance analytics and score breakdown",
               "Review your answers after completion",
             ].map((f) => (
-              <div key={f} className="flex items-center gap-3 text-slate-700">
-                <CheckCircle className="w-5 h-5 text-teal-500 flex-shrink-0" />
+              <div
+                key={f}
+                className="flex items-center gap-3 text-sm sm:text-base text-slate-700"
+              >
+                <CheckCircle className="w-4 h-4 sm:w-5 sm:h-5 text-teal-500 shrink-0" />
                 <span>{f}</span>
               </div>
             ))}
@@ -132,7 +145,7 @@ export default function QuizClient({ code }: { code: string }) {
         {/* ── Trigger button (replaces old handleStart) ── */}
         <Button
           onClick={handleOpenModal}
-          className="bg-blue-900 hover:bg-blue-800 text-white px-8 py-3 rounded-lg font-semibold text-lg transition-all flex items-center justify-center gap-2 mx-auto"
+          className="w-full sm:w-auto bg-blue-900 hover:bg-blue-800 text-white px-8 py-3 rounded-lg font-semibold text-lg transition-all flex items-center justify-center gap-2 mx-auto"
         >
           Start Quiz
           <ArrowRight className="w-5 h-5" />
