@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button";
 import Footer from "../components/Footer";
 
 export const metadata: Metadata = {
-  title: "About Us — Our Mission to Help Students Succeed | ExamPrep AI",
+  title: "About Us — Our Mission to Help Students Succeed",
   description:
     "ExamPrep AI is an independent study platform built to help university students prepare smarter with adaptive quizzes and AI-powered explanations. Learn about our vision, goals, and the students we serve.",
+  alternates: { canonical: "/about" },
 };
 
 const values = [

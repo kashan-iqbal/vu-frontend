@@ -5,9 +5,10 @@ import { blogPosts, formatDate } from "../data/blog";
 import Footer from "../components/Footer";
 
 export const metadata: Metadata = {
-  title: "Blog — Exam Tips & Study Guides | ExamPrep AI",
+  title: "Blog — Exam Tips & Study Guides",
   description:
     "Study smarter with the ExamPrep AI blog: exam preparation guides, MCQ strategies, and tips on using AI to improve your grades.",
+  alternates: { canonical: "/blog" },
 };
 
 export default function BlogPage() {

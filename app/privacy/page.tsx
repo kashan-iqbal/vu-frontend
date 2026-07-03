@@ -2,9 +2,10 @@ import type { Metadata } from "next";
 import Footer from "../components/Footer";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy | ExamPrep AI",
+  title: "Privacy Policy",
   description:
     "How ExamPrep AI collects, uses, and protects your data. ExamPrep AI is an independent study tool and is not affiliated with Virtual University (VU).",
+  alternates: { canonical: "/privacy" },
 };
 
 const LAST_UPDATED = "June 18, 2026";

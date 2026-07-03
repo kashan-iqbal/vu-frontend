@@ -6,6 +6,8 @@ import remarkGfm from "remark-gfm";
 import { ArrowLeft, Clock } from "lucide-react";
 import { blogPosts, getPostBySlug, formatDate } from "../../data/blog";
 import Footer from "../../components/Footer";
+import { JsonLd } from "../../components/JsonLd";
+import { siteConfig, absoluteUrl } from "../../lib/seo/site";
 
 // Pre-render every post at build time.
 export function generateStaticParams() {
@@ -19,15 +21,27 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const post = getPostBySlug(slug);
-  if (!post) return { title: "Post not found | ExamPrep AI" };
+  if (!post) {
+    return { title: "Post not found", robots: { index: false, follow: false } };
+  }
+  const canonical = `/blog/${post.slug}`;
   return {
-    title: `${post.title} | ExamPrep AI`,
+    title: post.title,
     description: post.description,
     keywords: post.tags,
+    alternates: { canonical },
     openGraph: {
       title: post.title,
       description: post.description,
       type: "article",
+      url: absoluteUrl(canonical),
+      publishedTime: post.date,
+      tags: post.tags,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: post.title,
+      description: post.description,
     },
   };
 }
@@ -41,8 +55,37 @@ export default async function BlogPostPage({
   const post = getPostBySlug(slug);
   if (!post) return notFound();
 
+  const canonical = absoluteUrl(`/blog/${post.slug}`);
+  const articleLd = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: post.title,
+    description: post.description,
+    datePublished: post.date,
+    dateModified: post.date,
+    keywords: post.tags.join(", "),
+    inLanguage: "en",
+    mainEntityOfPage: { "@type": "WebPage", "@id": canonical },
+    author: { "@type": "Organization", name: siteConfig.name, url: siteConfig.url },
+    publisher: {
+      "@type": "Organization",
+      name: siteConfig.name,
+      logo: { "@type": "ImageObject", url: absoluteUrl("/favicon.ico") },
+    },
+  };
+  const breadcrumbLd = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Home", item: siteConfig.url },
+      { "@type": "ListItem", position: 2, name: "Blog", item: absoluteUrl("/blog") },
+      { "@type": "ListItem", position: 3, name: post.title, item: canonical },
+    ],
+  };
+
   return (
     <div className="min-h-screen bg-white">
+      <JsonLd data={[articleLd, breadcrumbLd]} />
       <article className="mx-auto max-w-3xl px-4 py-12">
         <Link
           href="/blog"

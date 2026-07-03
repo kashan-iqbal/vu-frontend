@@ -4,9 +4,10 @@ import ContactForm from "../components/ContactForm";
 import Footer from "../components/Footer";
 
 export const metadata: Metadata = {
-  title: "Contact Us | ExamPrep AI",
+  title: "Contact Us",
   description:
     "Get in touch with the ExamPrep AI team. Questions, feedback, or course requests — we'd love to hear from you.",
+  alternates: { canonical: "/contact" },
 };
 
 export default function ContactPage() {

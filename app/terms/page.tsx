@@ -2,9 +2,10 @@ import type { Metadata } from "next";
 import Footer from "../components/Footer";
 
 export const metadata: Metadata = {
-  title: "Terms of Service | ExamPrep AI",
+  title: "Terms of Service",
   description:
     "The terms governing your use of ExamPrep AI. ExamPrep AI is an independent study tool and is not affiliated with Virtual University (VU).",
+  alternates: { canonical: "/terms" },
 };
 
 const LAST_UPDATED = "June 18, 2026";

@@ -14,9 +14,10 @@ import { Button } from "@/components/ui/button";
 import Footer from "../components/Footer";
 
 export const metadata: Metadata = {
-  title: "Features — AI Quizzes, Topic Review & Performance Tracking | ExamPrep AI",
+  title: "Features — AI Quizzes, Topic Review & Performance Tracking",
   description:
     "Explore ExamPrep AI features: adaptive MCQ quizzes that target your weak topics, AI-generated topic reviews you can listen to, course handouts, and detailed performance analytics to boost your exam scores.",
+  alternates: { canonical: "/features" },
 };
 
 const features = [
