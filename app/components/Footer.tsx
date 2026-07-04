@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BookOpen } from "lucide-react";
+import { Logo } from "./Logo";
 
 const LINKS = {
   Product: [
@@ -24,9 +24,7 @@ export default function Footer() {
         <div className="grid md:grid-cols-4 gap-8 mb-8">
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 bg-teal-500 rounded-lg flex items-center justify-center">
-                <BookOpen className="w-5 h-5 text-white" />
-              </div>
+              <Logo className="w-8 h-8" />
               <span className="font-bold text-white">ExamPrep AI</span>
             </div>
             <p className="text-sm">

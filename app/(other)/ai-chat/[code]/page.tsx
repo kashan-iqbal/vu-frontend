@@ -11,6 +11,7 @@ import {
   X,
 } from "lucide-react";
 import { useState, useRef, useEffect } from "react";
+import { Logo } from "@/components/Logo";
 
 /**
  * AI Chat Page - Modern Academic Minimalism Design
@@ -96,9 +97,7 @@ export default function Chat() {
             onClick={() => setLocation("/courses")}
             className="flex items-center gap-2 hover:opacity-80 transition-opacity"
           >
-            <div className="w-8 h-8 bg-blue-900 rounded-lg flex items-center justify-center">
-              <BookOpen className="w-5 h-5 text-white" />
-            </div>
+            <Logo className="w-8 h-8" />
             <span className="text-xl font-bold text-blue-900">ExamPrep AI</span>
           </button>
           <div className="hidden sm:flex items-center gap-4">

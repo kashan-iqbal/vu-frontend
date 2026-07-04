@@ -4,8 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
 import { useQueryClient } from "@tanstack/react-query";
-import { BookOpen, ChevronDown, LogOut } from "lucide-react";
+import { ChevronDown, LogOut } from "lucide-react";
 import { Button } from "./ui/button";
+import { Logo } from "./Logo";
 import { useCurrentUser } from "@/hooks/use-user";
 import { logout } from "@/lib/api/auth.api";
 
@@ -51,9 +52,7 @@ export const Header = () => {
     <nav className="sticky top-0 z-50 border-b border-slate-200 bg-white">
       <div className="container mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
         <Link href="/" className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-900">
-            <BookOpen className="h-5 w-5 text-white" />
-          </div>
+          <Logo className="h-8 w-8" />
           <span className="text-xl font-bold text-blue-900">ExamPrep AI</span>
         </Link>
 

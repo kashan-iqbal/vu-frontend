@@ -3,15 +3,8 @@
 import { Button } from "@/components/ui/button";
 import { OtpInput } from "@/components/ui/otp-input";
 import { useRouter } from "next/navigation";
-import {
-  BookOpen,
-  Mail,
-  Lock,
-  User,
-  Phone,
-  CheckCircle,
-  ArrowRight,
-} from "lucide-react";
+import { Mail, Lock, User, Phone, CheckCircle, ArrowRight } from "lucide-react";
+import { Logo } from "@/components/Logo";
 import { useState } from "react";
 import { useSendOtp, useVerifyOtp, useRegister } from "@/hooks/use-auth";
 import { toast } from "sonner";
@@ -142,9 +135,7 @@ export default function SignUpPage() {
             onClick={() => router.push("/")}
             className="flex items-center justify-center gap-2 mx-auto mb-6 hover:opacity-80 transition-opacity"
           >
-            <div className="w-10 h-10 bg-teal-400 rounded-lg flex items-center justify-center">
-              <BookOpen className="w-6 h-6 text-blue-900" />
-            </div>
+            <Logo className="w-10 h-10" />
             <span className="text-2xl font-bold text-white">ExamPrep AI</span>
           </button>
           <h1 className="text-3xl font-bold text-white mb-2">Create Account</h1>
