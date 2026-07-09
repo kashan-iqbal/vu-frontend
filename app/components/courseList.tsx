@@ -180,7 +180,9 @@ export default function CourseList({
                         className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 text-slate-600 hover:bg-teal-50 hover:text-teal-600 transition-colors group/link text-left"
                       >
                         <Brain className="w-5 h-5 text-teal-500/70 group-hover/link:text-teal-600" />
-                        <span className="text-sm font-medium">AI Practice</span>
+                        <span className="text-sm font-medium">
+                          Practice MCQS
+                        </span>
                       </Link>
 
                       <button
