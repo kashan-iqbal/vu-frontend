@@ -156,14 +156,13 @@ export default function CourseList({
 
                     {/* Action grid */}
                     <div className="grid grid-cols-2 gap-4 mt-6 mb-8">
-                      <button
-                        type="button"
-                        onClick={() => setComingSoonOpen(true)}
+                      <Link
+                        href={`/past-mcqs/${course.code}`}
                         className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 text-slate-600 hover:bg-teal-50 hover:text-teal-600 transition-colors group/link text-left"
                       >
                         <History className="w-5 h-5 text-teal-500/70 group-hover/link:text-teal-600" />
                         <span className="text-sm font-medium">Past MCQs</span>
-                      </button>
+                      </Link>
 
                       <Link
                         href={`/handout/${course.code}`}

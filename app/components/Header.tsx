@@ -56,52 +56,63 @@ export const Header = () => {
           <span className="text-xl font-bold text-blue-900">ExamPrep AI</span>
         </Link>
 
-        {user ? (
-          <div className="relative" ref={menuRef}>
-            <button
-              onClick={() => setMenuOpen((o) => !o)}
-              className="flex items-center gap-2 rounded-full py-1 pl-1 pr-2 transition-colors hover:bg-slate-100"
-            >
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-900 text-sm font-bold text-white">
-                {initials}
-              </span>
-              <span className="hidden max-w-[140px] truncate text-sm font-medium text-slate-700 sm:block">
-                {user.name}
-              </span>
-              <ChevronDown className="h-4 w-4 text-slate-400" />
-            </button>
+        <div className="flex items-center gap-3 sm:gap-4">
+          <Link
+            href="/contribute"
+            className="text-sm font-medium text-slate-700 transition-colors hover:text-blue-900"
+          >
+            Contribute
+          </Link>
 
-            {menuOpen && (
-              <div className="absolute right-0 mt-2 w-56 rounded-xl border border-slate-200 bg-white py-2 shadow-lg">
-                <div className="border-b border-slate-100 px-4 py-2">
-                  <p className="truncate text-sm font-semibold text-slate-800">
-                    {user.name}
-                  </p>
-                  <p className="truncate text-xs text-slate-500">{user.email}</p>
-                </div>
-                <button
-                  onClick={handleLogout}
-                  className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm font-medium text-red-600 hover:bg-red-50"
-                >
-                  <LogOut className="h-4 w-4" /> Logout
-                </button>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="flex items-center gap-4">
-            <Link href="/login">
-              <button className="font-medium text-slate-700 transition-colors hover:text-blue-900">
-                Login
+          {user ? (
+            <div className="relative" ref={menuRef}>
+              <button
+                onClick={() => setMenuOpen((o) => !o)}
+                className="flex items-center gap-2 rounded-full py-1 pl-1 pr-2 transition-colors hover:bg-slate-100"
+              >
+                <span className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-900 text-sm font-bold text-white">
+                  {initials}
+                </span>
+                <span className="hidden max-w-[140px] truncate text-sm font-medium text-slate-700 sm:block">
+                  {user.name}
+                </span>
+                <ChevronDown className="h-4 w-4 text-slate-400" />
               </button>
-            </Link>
-            <Link href="/signup">
-              <Button className="rounded-lg bg-teal-500 text-white hover:bg-teal-600">
-                Get Started
-              </Button>
-            </Link>
-          </div>
-        )}
+
+              {menuOpen && (
+                <div className="absolute right-0 mt-2 w-56 rounded-xl border border-slate-200 bg-white py-2 shadow-lg">
+                  <div className="border-b border-slate-100 px-4 py-2">
+                    <p className="truncate text-sm font-semibold text-slate-800">
+                      {user.name}
+                    </p>
+                    <p className="truncate text-xs text-slate-500">
+                      {user.email}
+                    </p>
+                  </div>
+                  <button
+                    onClick={handleLogout}
+                    className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm font-medium text-red-600 hover:bg-red-50"
+                  >
+                    <LogOut className="h-4 w-4" /> Logout
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="flex items-center gap-4">
+              <Link href="/login">
+                <button className="font-medium text-slate-700 transition-colors hover:text-blue-900">
+                  Login
+                </button>
+              </Link>
+              <Link href="/signup">
+                <Button className="rounded-lg bg-teal-500 text-white hover:bg-teal-600">
+                  Get Started
+                </Button>
+              </Link>
+            </div>
+          )}
+        </div>
       </div>
     </nav>
   );

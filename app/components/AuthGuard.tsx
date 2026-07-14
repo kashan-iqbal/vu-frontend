@@ -1,9 +1,14 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 import { Loader2 } from "lucide-react";
 import { useCurrentUser } from "@/hooks/use-user";
+import {
+  readNextParam,
+  withNext,
+  currentPathWithQuery,
+} from "@/lib/redirect";
 
 /**
  * Client-side route protection based on the same `/user/me` signal the Header
@@ -12,8 +17,11 @@ import { useCurrentUser } from "@/hooks/use-user";
  * readable by the Next.js server/middleware — so route guarding must happen
  * against the API, not a server-read cookie.
  *
- * - mode "require": block app routes for logged-out users → redirect to /login.
- * - mode "guest":   keep logged-in users out of auth pages → redirect to /course.
+ * - mode "require": block app routes for logged-out users → redirect to /login,
+ *   carrying the attempted path as `next` so they land back here after signing
+ *   in (this is what makes a shared link to a protected page work).
+ * - mode "guest":   keep logged-in users out of auth pages → send them to `next`
+ *   when one was carried in, otherwise /course.
  */
 export function AuthGuard({
   children,
@@ -23,6 +31,7 @@ export function AuthGuard({
   mode?: "require" | "guest";
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const { data: user, isLoading, isError } = useCurrentUser();
 
   const isAuthed = Boolean(user);
@@ -30,11 +39,13 @@ export function AuthGuard({
   useEffect(() => {
     if (isLoading) return;
     if (mode === "require" && isError) {
-      router.replace("/login");
+      // "/" is the default landing spot, so there's nothing worth returning to.
+      const next = pathname === "/" ? null : currentPathWithQuery(pathname);
+      router.replace(withNext("/login", next));
     } else if (mode === "guest" && isAuthed) {
-      router.replace("/course");
+      router.replace(readNextParam() ?? "/course");
     }
-  }, [isLoading, isError, isAuthed, mode, router]);
+  }, [isLoading, isError, isAuthed, mode, router, pathname]);
 
   // Require mode: never render protected content until we know the user is authed.
   if (mode === "require" && (isLoading || !isAuthed)) {

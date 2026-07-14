@@ -1,6 +1,4 @@
 export const coursesBySubject = {
-
-
   "acc": [
     {
       "code": "ACC311",

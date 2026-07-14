@@ -2,6 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { OtpInput } from "@/components/ui/otp-input";
+import { readNextParam, withNext } from "@/lib/redirect";
 import { useRouter } from "next/navigation";
 import { Mail, Lock, User, Phone, CheckCircle, ArrowRight } from "lucide-react";
 import { Logo } from "@/components/Logo";
@@ -190,7 +191,7 @@ export default function SignUpPage() {
                   Already have an account?{" "}
                   <button
                     type="button"
-                    onClick={() => router.push("/login")}
+                    onClick={() => router.push(withNext("/login", readNextParam()))}
                     className="text-teal-600 hover:text-teal-700 font-medium transition-colors"
                   >
                     Login
@@ -377,7 +378,7 @@ export default function SignUpPage() {
                   Already have an account?{" "}
                   <button
                     type="button"
-                    onClick={() => router.push("/login")}
+                    onClick={() => router.push(withNext("/login", readNextParam()))}
                     className="text-teal-600 hover:text-teal-700 font-medium transition-colors"
                   >
                     Login
@@ -407,7 +408,7 @@ export default function SignUpPage() {
               </div>
 
               <Button
-                onClick={() => router.push("/login")}
+                onClick={() => router.push(withNext("/login", readNextParam()))}
                 className="w-full bg-blue-900 hover:bg-blue-800 text-white py-3 rounded-lg font-semibold transition-all flex items-center justify-center gap-2"
               >
                 Go to Login

@@ -7,6 +7,7 @@ import { AuthProviders } from "./provider/googleProvider";
 import { Header } from "./components/Header";
 import { JsonLd } from "./components/JsonLd";
 import { siteConfig, absoluteUrl } from "./lib/seo/site";
+import Script from "next/script";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -116,7 +117,30 @@ export default function RootLayout({
             <Toaster position="top-left" />
           </QueryProvider>
         </AuthProviders>
+        <Script
+          async
+          src="https://www.googletagmanager.com/gtag/js?id=G-QCJRDCWGHB"
+          strategy="afterInteractive"
+        />
+        <Script id="google-analytics" strategy="afterInteractive">
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-QCJRDCWGHB');
+          `}
+        </Script>
       </body>
     </html>
   );
 }
+
+// <!-- Google tag (gtag.js) -->
+// <script async src="https://www.googletagmanager.com/gtag/js?id=G-QCJRDCWGHB"></script>
+// <script>
+//   window.dataLayer = window.dataLayer || [];
+//   function gtag(){dataLayer.push(arguments);}
+//   gtag('js', new Date());
+
+//   gtag('config', 'G-QCJRDCWGHB');
+// </script>

@@ -7,6 +7,14 @@ export const ENDPOINTS = {
   topicReview: {
     get: (quizCode: string) => `/topic-review/${quizCode}`,
   },
+  pastQuiz: {
+    getByCode: (code: string, examType: string) =>
+      `/pastquiz/${code}/${examType}`,
+  },
+  contribution: {
+    codes: "/contributions/codes",
+    upload: (code: string) => `/contributions/${code}`,
+  },
   handout: {
     get: (code: string, examType: string) => `/handout/${code}/${examType}`,
   },

@@ -10,6 +10,7 @@ import { useLogin } from "@/hooks/use-auth";
 import { toast } from "sonner";
 import { GoogleLogin, type CredentialResponse } from "@react-oauth/google";
 import { loginSchema, fieldErrors } from "@/lib/validation/auth.schema";
+import { readNextParam, withNext } from "@/lib/redirect";
 
 export default function Login() {
   const router = useRouter();
@@ -36,7 +37,9 @@ export default function Login() {
           // Cookie is now set; refetch the cached (logged-out) /user/me so the
           // Header immediately reflects the authenticated user.
           await queryClient.invalidateQueries({ queryKey: ["me"] });
-          router.push("/");
+          // Hand the user back to the page that sent them here (e.g. a shared
+          // /contribute link), falling back to the landing page.
+          router.push(readNextParam() ?? "/");
         } else {
           toast.error(result.message ?? "Login failed.");
         }
@@ -167,7 +170,9 @@ export default function Login() {
               </label>
               <button
                 type="button"
-                onClick={() => router.push("/forgot-password")}
+                onClick={() =>
+                  router.push(withNext("/forgot-password", readNextParam()))
+                }
                 className="text-teal-600 hover:text-teal-700 font-medium transition-colors"
               >
                 Forgot password?
@@ -195,7 +200,7 @@ export default function Login() {
               Don&apos;t have an account?{" "}
               <button
                 type="button"
-                onClick={() => router.push("/signup")}
+                onClick={() => router.push(withNext("/signup", readNextParam()))}
                 className="text-teal-600 hover:text-teal-700 font-semibold transition-colors"
               >
                 Create one now

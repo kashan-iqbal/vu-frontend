@@ -1,7 +1,5 @@
 import { notFound } from "next/navigation";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import TermSelector from "../../../components/TermChange";
+import PastMcqsClient from "../../../components/PastMcqsClient";
 
 export default async function Page({
   params,
@@ -9,6 +7,7 @@ export default async function Page({
   params: Promise<{ code: string }>;
 }) {
   const { code } = await params;
+  if (!code) return notFound();
 
-  return <div className="min-h-screen bg-white py-12">{code}</div>;
+  return <PastMcqsClient code={code} />;
 }
