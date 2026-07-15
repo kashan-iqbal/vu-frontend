@@ -19,9 +19,18 @@ import {
   Loader2,
   BookOpen,
   Sparkles,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useIsMobile } from "@/hooks/useIsMobile";
+import {
+  playCorrect,
+  playWrong,
+  preloadQuizSounds,
+  useSoundEnabled,
+  setSoundEnabled,
+} from "@/lib/sound";
 import {
   submitQuiz,
   type QuizResult,
@@ -69,6 +78,13 @@ export default function QuizTaker({
   // Mobile shows the explanation in a popup instead of inline.
   const [explanationOpen, setExplanationOpen] = useState(false);
   const isMobile = useIsMobile();
+
+  const soundEnabled = useSoundEnabled();
+
+  // Fetch the answer cues up front so the first one isn't late.
+  useEffect(() => {
+    preloadQuizSounds();
+  }, []);
 
   const currentQuestion = questions[currentQuestionIndex];
   const currentSelected = selectedAnswers[currentQuestionIndex];
@@ -137,6 +153,13 @@ export default function QuizTaker({
       ...prev,
       [currentQuestionIndex]: optionIndex,
     }));
+    // Audio cue alongside the visual reveal. Fired straight from the click so
+    // the browser lets the AudioContext start.
+    if (optionIndex === currentQuestion.correctAnswer) {
+      playCorrect();
+    } else {
+      playWrong();
+    }
     // On phones the explanation lives in a popup — open it on selection.
     if (isMobile) setExplanationOpen(true);
   };
@@ -307,7 +330,23 @@ export default function QuizTaker({
           <span>
             {answeredCount} of {questions.length} answered
           </span>
-          <span className="font-semibold text-teal-600">{progress}%</span>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={() => setSoundEnabled(!soundEnabled)}
+              aria-pressed={soundEnabled}
+              aria-label={soundEnabled ? "Mute answer sounds" : "Unmute answer sounds"}
+              title={soundEnabled ? "Mute answer sounds" : "Unmute answer sounds"}
+              className="rounded-full p-1 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600"
+            >
+              {soundEnabled ? (
+                <Volume2 className="h-4 w-4" />
+              ) : (
+                <VolumeX className="h-4 w-4" />
+              )}
+            </button>
+            <span className="font-semibold text-teal-600">{progress}%</span>
+          </div>
         </div>
 
         {/* ── Question card ── */}

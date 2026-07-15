@@ -12,6 +12,7 @@ import {
   FileQuestion,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { NoCopy } from "@/components/NoCopy";
 import { getPastMcqs, type PastMcq } from "@/lib/api/pastQuiz.api";
 
 type ExamType = "midterm" | "finalterm";
@@ -125,7 +126,7 @@ export default function PastMcqsClient({ code }: { code: string }) {
   const examLabel = examType === "finalterm" ? "Final term" : "Midterm";
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <NoCopy className="min-h-screen bg-slate-50">
       <div className="mx-auto max-w-4xl px-4 py-6 sm:py-8">
         {/* ── Header ── */}
         <div className="mb-6">
@@ -259,7 +260,7 @@ export default function PastMcqsClient({ code }: { code: string }) {
           </>
         )}
       </div>
-    </div>
+    </NoCopy>
   );
 }
 

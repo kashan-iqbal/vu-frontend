@@ -5,29 +5,38 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Loader2 } from "lucide-react";
 import TermSelector from "@/components/TermChange";
-import { getHandout } from "@/lib/api/handout.api";
+import { NoCopy } from "@/components/NoCopy";
+import { getHandout, type Handout } from "@/lib/api/handout.api";
 
 type Term = "midterm" | "finalterm";
 
 export default function HandoutClient({
   code,
   examType,
+  initialData,
 }: {
   code: string;
   examType: Term;
+  /**
+   * Handout fetched on the server. When provided, the summary renders straight
+   * into the SSR HTML (so crawlers see the real content and there's no loading
+   * flash); React Query still owns it from there.
+   */
+  initialData?: Handout;
 }) {
   const { data, isPending, isError, error } = useQuery({
     queryKey: ["handout", code, examType],
     queryFn: () => getHandout(code, examType),
     staleTime: 60 * 60 * 1000, // summaries rarely change
     retry: 0,
+    initialData,
   });
 
   const status = (error as { response?: { status?: number } } | null)?.response
     ?.status;
 
   return (
-    <div className="min-h-screen bg-white py-12">
+    <NoCopy className="min-h-screen bg-white py-12">
       <div className="mx-auto max-w-3xl px-4">
         <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <h2 className="text-lg font-semibold text-blue-900">{code} Summary</h2>
@@ -55,6 +64,6 @@ export default function HandoutClient({
           </article>
         )}
       </div>
-    </div>
+    </NoCopy>
   );
 }

@@ -1,15 +1,17 @@
 import type { MetadataRoute } from "next";
 import { siteConfig } from "./lib/seo/site";
 import { blogPosts } from "./data/blog";
-import { allCourses } from "./lib/courses";
-
-const EXAM_TYPES = ["midterm", "finalterm"] as const;
+import { listHandoutKeys } from "./lib/api/handout.server";
 
 /**
- * Dynamic XML sitemap covering only publicly indexable pages (marketing + blog).
- * Authenticated app routes are intentionally excluded (see robots.ts).
+ * Dynamic XML sitemap covering only publicly indexable pages (marketing, blog
+ * and handouts). Authenticated app routes are excluded (see robots.ts).
+ *
+ * Handout URLs come from the API's real handout list, so we only ever submit
+ * pages that have content — submitting empty/404 URLs wastes crawl budget and
+ * gets them dropped as thin pages.
  */
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const base = siteConfig.url;
   const now = new Date();
 
@@ -30,15 +32,15 @@ export default function sitemap(): MetadataRoute.Sitemap {
     priority: 0.7,
   }));
 
-  // One entry per course code × exam type (midterm / finalterm).
-  const handoutRoutes: MetadataRoute.Sitemap = allCourses.flatMap((c) =>
-    EXAM_TYPES.map((examType) => ({
-      url: `${base}/handout/${c.code}/${examType}`,
-      lastModified: now,
-      changeFrequency: "monthly" as const,
-      priority: 0.6,
-    })),
-  );
+  // Only handouts that actually exist in the API (empty ones 404 and must never
+  // be submitted). Falls back to no handout entries if the API is unreachable.
+  const handoutKeys = await listHandoutKeys();
+  const handoutRoutes: MetadataRoute.Sitemap = handoutKeys.map((k) => ({
+    url: `${base}/handout/${k.code}/${k.examType}`,
+    lastModified: now,
+    changeFrequency: "monthly" as const,
+    priority: 0.6,
+  }));
 
   return [...staticRoutes, ...blogRoutes, ...handoutRoutes];
 }
