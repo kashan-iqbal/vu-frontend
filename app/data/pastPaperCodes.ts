@@ -1,6 +1,9 @@
 // Courses still missing a contributed PDF. Drives the /contribute grid — each
 // code accepts exactly one upload, after which it shows as already submitted.
 // Titles are resolved at render time via getCourseByCode() in ../lib/courses.
+//
+// ⚠️ Mirrored by backend/src/modules/contribution/contribution.codes.ts, which
+// enforces this list server-side — keep the two in sync.
 export const PAST_PAPER_CODES: string[] = [
   "BIF101",
   "BIF401",

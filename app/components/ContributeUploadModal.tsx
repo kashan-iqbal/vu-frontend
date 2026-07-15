@@ -8,6 +8,14 @@ import { uploadContribution } from "@/lib/api/contribution.api";
 
 const MAX_BYTES = 50 * 1024 * 1024; // 50 MB — matches the backend limit
 
+// Pakistani mobile, e.g. 03001234567 — same rule the server enforces.
+const PHONE_RE = /^03\d{9}$/;
+
+/** Let people paste "0300-123 4567" without it being rejected. */
+function normalisePhone(raw: string): string {
+  return raw.replace(/[\s-]/g, "");
+}
+
 function formatSize(bytes: number): string {
   if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
@@ -55,6 +63,8 @@ export default function ContributeUploadModal({
   code: string;
   courseTitle: string;
 }) {
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [note, setNote] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -82,6 +92,8 @@ export default function ContributeUploadModal({
   };
 
   const reset = () => {
+    setName("");
+    setPhone("");
     setFile(null);
     setNote("");
     setError(null);
@@ -97,6 +109,18 @@ export default function ContributeUploadModal({
   // Awaited (not fire-and-forget) so we know whether this course got claimed and
   // can flip the card / surface a 409 in place.
   const handleSubmit = async () => {
+    // Mirrors the server's zod rules so mistakes are caught before a 50MB upload.
+    const cleanName = name.trim();
+    const cleanPhone = normalisePhone(phone);
+
+    if (cleanName.length < 2) {
+      setError("Please enter your name.");
+      return;
+    }
+    if (!PHONE_RE.test(cleanPhone)) {
+      setError("Enter a valid 11-digit mobile number (e.g. 03001234567).");
+      return;
+    }
     if (!file) {
       setError("Please choose a PDF to upload.");
       return;
@@ -104,6 +128,8 @@ export default function ContributeUploadModal({
 
     const form = new FormData();
     form.append("pdf", file);
+    form.append("name", cleanName);
+    form.append("phone", cleanPhone);
     if (note.trim()) form.append("note", note.trim());
 
     setSubmitting(true);
@@ -148,6 +174,51 @@ export default function ContributeUploadModal({
           >
             <X className="h-5 w-5" />
           </button>
+        </div>
+
+        {/* Who's contributing — uploads are anonymous, so this is how we can
+            follow up about a submission. */}
+        <div className="space-y-3">
+          <div>
+            <label
+              htmlFor="contrib-name"
+              className="mb-1 block text-sm font-medium text-slate-700"
+            >
+              Your name
+            </label>
+            <input
+              id="contrib-name"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              disabled={submitting}
+              maxLength={100}
+              autoComplete="name"
+              placeholder="e.g. Ali Khan"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-200 disabled:opacity-60"
+            />
+          </div>
+
+          <div>
+            <label
+              htmlFor="contrib-phone"
+              className="mb-1 block text-sm font-medium text-slate-700"
+            >
+              Mobile number
+            </label>
+            <input
+              id="contrib-phone"
+              type="tel"
+              inputMode="numeric"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              disabled={submitting}
+              maxLength={13}
+              autoComplete="tel"
+              placeholder="03001234567"
+              className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-teal-500 focus:outline-none focus:ring-2 focus:ring-teal-200 disabled:opacity-60"
+            />
+          </div>
         </div>
 
         {/* Dropzone / file picker */}
