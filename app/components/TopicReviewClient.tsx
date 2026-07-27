@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getTopicReview } from "@/lib/api/topic-review.api";
+import { InlineFeedback } from "@/components/feedback/InlineFeedback";
 
 // Strip basic markdown so the speech reads cleanly (no asterisks/backticks/etc).
 function stripMarkdown(md: string): string {
@@ -211,6 +212,13 @@ export default function TopicReviewClient({ quizCode }: { quizCode: string }) {
             {isFetching && (
               <p className="text-center text-xs text-slate-400">Refreshing…</p>
             )}
+
+            <InlineFeedback
+              context="topic-review"
+              reference={quizCode}
+              title="Were these explanations helpful?"
+              subtitle="Rate the AI review to help us improve it."
+            />
           </div>
         )}
       </main>

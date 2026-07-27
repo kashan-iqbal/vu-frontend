@@ -15,6 +15,9 @@ export const ENDPOINTS = {
     codes: "/contributions/codes",
     upload: (code: string) => `/contributions/${code}`,
   },
+  feedback: {
+    submit: "/feedback",
+  },
   handout: {
     get: (code: string, examType: string) => `/handout/${code}/${examType}`,
   },

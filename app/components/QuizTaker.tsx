@@ -31,6 +31,7 @@ import {
   useSoundEnabled,
   setSoundEnabled,
 } from "@/lib/sound";
+import { InlineFeedback } from "@/components/feedback/InlineFeedback";
 import {
   submitQuiz,
   type QuizResult,
@@ -278,6 +279,13 @@ export default function QuizTaker({
           >
             Retake Quiz
           </Button>
+
+          <InlineFeedback
+            context="quiz-results"
+            reference={quizCode}
+            title="How was this quiz?"
+            subtitle="Your rating helps us make practice better."
+          />
         </div>
       </div>
     );

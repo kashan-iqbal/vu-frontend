@@ -2,6 +2,7 @@
 // normal flow, so feature pages don't need extra top padding here.
 import type { Metadata } from "next";
 import { AuthGuard } from "../components/AuthGuard";
+import { FloatingFeedback } from "../components/feedback/FloatingFeedback";
 
 // These routes are authenticated and user-specific — keep them out of search.
 export const metadata: Metadata = {
@@ -13,5 +14,10 @@ export default function GenericLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return <AuthGuard mode="require">{children}</AuthGuard>;
+  return (
+    <AuthGuard mode="require">
+      {children}
+      <FloatingFeedback />
+    </AuthGuard>
+  );
 }
