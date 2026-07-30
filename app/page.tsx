@@ -1,5 +1,5 @@
-"use client";
 import { Button } from "@/components/ui/button";
+import Image from "next/image";
 import {
   BookOpen,
   Brain,
@@ -17,8 +17,6 @@ import Footer from "./components/Footer";
  * Features overview and call-to-action
  */
 export default function Landing() {
-  // const [location, setLocation] = useLocation();
-
   const features = [
     {
       icon: Brain,
@@ -62,13 +60,16 @@ export default function Landing() {
     <div className="min-h-screen bg-white">
       {/* Hero Section */}
       <section className="relative overflow-hidden">
-        <div
-          className="absolute inset-0 bg-cover bg-center"
-          style={{
-            backgroundImage:
-              "url('https://d2xsxph8kpxj0f.cloudfront.net/89259946/jBE2t9QLC672dL5die5n5i/hero-landing-bhZgAZBDUjY4YpBKY5nxb9.webp')",
-          }}
-        >
+        <div className="absolute inset-0">
+          <Image
+            src="https://d2xsxph8kpxj0f.cloudfront.net/89259946/jBE2t9QLC672dL5die5n5i/hero-landing-bhZgAZBDUjY4YpBKY5nxb9.webp"
+            alt=""
+            fill
+            priority
+            fetchPriority="high"
+            sizes="100vw"
+            className="object-cover object-center"
+          />
           <div className="absolute inset-0 bg-linear-to-r from-white via-white/80 to-transparent"></div>
         </div>
 

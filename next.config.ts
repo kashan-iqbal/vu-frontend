@@ -43,6 +43,19 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  // Consolidate www → non-www so both don't compete in search. Runs only if www
+  // requests actually reach the Next app; harmless no-op if the host/CDN already
+  // redirects. http → https is handled at the hosting/CDN layer.
+  async redirects() {
+    return [
+      {
+        source: "/:path*",
+        has: [{ type: "host", value: "www.vuexamprep.com" }],
+        destination: "https://vuexamprep.com/:path*",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import type { Handout } from "./handout.api";
 
 /**
@@ -55,8 +56,13 @@ export async function listHandoutKeys(): Promise<HandoutKey[]> {
   }
 }
 
-/** A single handout's content, or null when it doesn't exist (404) or the API is down. */
-export async function getHandoutContent(
+/**
+ * A single handout's content, or null when it doesn't exist (404) or the API is
+ * down. Wrapped in React `cache()` so `generateMetadata` and the page component
+ * share ONE request — they can never disagree (no "200 body + noindex head"),
+ * and it halves calls to the rate-limited backend.
+ */
+export const getHandoutContent = cache(async function getHandoutContent(
   code: string,
   examType: string,
 ): Promise<Handout | null> {
@@ -71,4 +77,4 @@ export async function getHandoutContent(
   } catch {
     return null;
   }
-}
+});
