@@ -35,5 +35,20 @@ export const ENDPOINTS = {
   user: {
     me: "/user/me",
   },
+  admin: {
+    overview: "/admin/stats/overview",
+    users: "/admin/users",
+    userStatus: (id: string) => `/admin/users/${id}/status`,
+    contributions: "/admin/contributions",
+    contributionApprove: (id: string) => `/admin/contributions/${id}/approve`,
+    contributionReject: (id: string) => `/admin/contributions/${id}/reject`,
+    contributors: "/admin/contributors",
+    contributorDetail: (phone: string) => `/admin/contributors/${phone}`,
+    handouts: "/admin/handouts",
+    mcqsPast: "/admin/mcqs/past",
+    mcqsAi: "/admin/mcqs/ai",
+    wrongAnswers: "/admin/mcqs/wrong-answers",
+    feedback: "/admin/feedback",
+  },
   // add more as your app grows
 };

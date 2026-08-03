@@ -5,6 +5,7 @@ export interface CurrentUser {
   _id: string;
   name: string;
   email: string;
+  role: "user" | "admin";
   phoneNo?: number;
   avatar?: string;
   provider?: string;
