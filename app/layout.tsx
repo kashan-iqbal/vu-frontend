@@ -3,7 +3,6 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import QueryProvider from "./provider/querryProvider";
 import { Toaster } from "./components/ui/sonner";
-import { AuthProviders } from "./provider/googleProvider";
 import { Header } from "./components/Header";
 import { JsonLd } from "./components/JsonLd";
 import { siteConfig, absoluteUrl } from "./lib/seo/site";
@@ -92,7 +91,14 @@ export default function RootLayout({
     name: siteConfig.name,
     url: siteConfig.url,
     description: siteConfig.description,
-    logo: absoluteUrl("/favicon.ico"),
+    // Real, crawlable logo asset (SVG is a Google-supported logo format).
+    // Previously pointed at the removed /favicon.ico.
+    logo: {
+      "@type": "ImageObject",
+      url: absoluteUrl("/icon-badge.svg"),
+      width: 512,
+      height: 512,
+    },
   };
 
   const websiteLd = {
@@ -104,25 +110,33 @@ export default function RootLayout({
     inLanguage: "en",
   };
 
+  // Preconnect to the API origin so the Header's /user/me call (and any client
+  // fetches) start their TLS handshake early instead of on first request.
+  let apiOrigin: string | null = null;
+  try {
+    apiOrigin = new URL(process.env.NEXT_PUBLIC_API_BASE_URL ?? "").origin;
+  } catch {
+    apiOrigin = null;
+  }
+
   return (
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        {apiOrigin && <link rel="preconnect" href={apiOrigin} />}
         <JsonLd data={[organizationLd, websiteLd]} />
-        <AuthProviders>
-          <QueryProvider>
-            <Header />
-            {children}
-            <Toaster position="top-left" />
-          </QueryProvider>
-        </AuthProviders>
+        <QueryProvider>
+          <Header />
+          {children}
+          <Toaster position="top-left" />
+        </QueryProvider>
         <Script
           async
           src="https://www.googletagmanager.com/gtag/js?id=G-QCJRDCWGHB"
-          strategy="afterInteractive"
+          strategy="lazyOnload"
         />
-        <Script id="google-analytics" strategy="afterInteractive">
+        <Script id="google-analytics" strategy="lazyOnload">
           {`
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}

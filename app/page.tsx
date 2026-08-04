@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import Footer from "./components/Footer";
+import Testimonials from "./components/Testimonials";
 
 /**
  * Landing Page - Modern Academic Minimalism Design
@@ -79,9 +80,15 @@ export default function Landing() {
               Master Your Exams with AI
             </h1>
             <p className="text-lg sm:text-xl text-slate-700 mb-8 leading-relaxed">
-              ExamPrep AI combines intelligent tutoring, personalized MCQ
-              generation, and comprehensive analytics to help you ace your
-              university exams. Prepare smarter, not harder.
+              ExamPrep AI combines intelligent tutoring,{" "}
+              <Link
+                href="/features"
+                className="font-medium text-teal-700 underline decoration-teal-300 underline-offset-2 hover:text-teal-800"
+              >
+                personalized MCQ practice
+              </Link>
+              , and AI topic explanations to help you ace your university exams.
+              Prepare smarter, not harder.
             </p>
             <div className="flex flex-col sm:flex-row gap-4">
               <Link href="/course" className="w-full sm:w-auto">
@@ -175,29 +182,35 @@ export default function Landing() {
               {
                 step: "1",
                 title: "Choose Your Course",
-                desc: "Select from 50+ Computer Science courses",
+                desc: "Browse VU courses and pick the one you're preparing for.",
+                href: "/course",
               },
               {
                 step: "2",
-                title: "Chat with AI",
-                desc: "Ask questions and get instant explanations",
+                title: "Study the Handouts",
+                desc: "Read concise, AI-summarized course handouts to revise fast.",
+                href: "/features",
               },
               {
                 step: "3",
-                title: "Take MCQ Tests",
-                desc: "Practice with AI-generated questions and track progress",
+                title: "Practice MCQs",
+                desc: "Test yourself with past MCQs and get instant AI explanations.",
+                href: "/features",
               },
             ].map((item, index) => (
               <div key={index} className="relative">
-                <div className="flex flex-col items-center">
+                <Link
+                  href={item.href}
+                  className="group flex flex-col items-center rounded-xl p-2 transition-colors hover:bg-slate-50"
+                >
                   <div className="w-16 h-16 bg-blue-900 rounded-full flex items-center justify-center text-white text-2xl font-bold mb-4">
                     {item.step}
                   </div>
-                  <h3 className="text-xl font-bold text-blue-900 mb-2 text-center">
+                  <h3 className="text-xl font-bold text-blue-900 mb-2 text-center group-hover:text-teal-700">
                     {item.title}
                   </h3>
                   <p className="text-slate-600 text-center">{item.desc}</p>
-                </div>
+                </Link>
                 {index < 2 && (
                   <div className="hidden md:block absolute top-8 -right-4 w-8 h-8 text-teal-500 text-2xl">
                     →
@@ -208,6 +221,9 @@ export default function Landing() {
           </div>
         </div>
       </section>
+
+      {/* Testimonials */}
+      <Testimonials />
 
       {/* CTA Section */}
       <section className="py-20 bg-linear-to-r from-blue-900 to-blue-800">
@@ -224,6 +240,69 @@ export default function Landing() {
               Explore Courses
             </Button>
           </Link>
+        </div>
+      </section>
+
+      {/* Explore more — a hub of internal links so crawlers (and students)
+          can reach every key page from the homepage. */}
+      <section className="border-t border-slate-200 bg-white py-16">
+        <div className="container mx-auto max-w-7xl px-4">
+          <h2 className="mb-8 text-2xl font-bold text-blue-900">
+            Explore ExamPrep AI
+          </h2>
+          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              {
+                heading: "Study Tools",
+                links: [
+                  { label: "All Features", href: "/features" },
+                  { label: "Browse Courses", href: "/course" },
+                  { label: "Contribute a PDF", href: "/contribute" },
+                ],
+              },
+              {
+                heading: "Learn",
+                links: [
+                  { label: "Blog & Study Tips", href: "/blog" },
+                  { label: "About ExamPrep AI", href: "/about" },
+                  { label: "Contact Us", href: "/contact" },
+                ],
+              },
+              {
+                heading: "Get Started",
+                links: [
+                  { label: "Create Free Account", href: "/signup" },
+                  { label: "Login", href: "/login" },
+                  { label: "Explore Courses", href: "/course" },
+                ],
+              },
+              {
+                heading: "Legal",
+                links: [
+                  { label: "Privacy Policy", href: "/privacy" },
+                  { label: "Terms of Service", href: "/terms" },
+                ],
+              },
+            ].map((col) => (
+              <div key={col.heading}>
+                <h3 className="mb-3 text-sm font-bold uppercase tracking-wider text-slate-500">
+                  {col.heading}
+                </h3>
+                <ul className="space-y-2">
+                  {col.links.map((l) => (
+                    <li key={l.href}>
+                      <Link
+                        href={l.href}
+                        className="text-slate-700 transition-colors hover:text-teal-700"
+                      >
+                        {l.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
