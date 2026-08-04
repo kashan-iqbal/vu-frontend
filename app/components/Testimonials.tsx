@@ -30,7 +30,11 @@ export default function Testimonials() {
               className="flex flex-col rounded-xl border border-slate-200 bg-white p-8 shadow-sm"
             >
               <Quote className="mb-4 h-8 w-8 text-teal-500/70" />
-              <div className="mb-4 flex gap-0.5" aria-label="5 out of 5 stars">
+              <div
+                className="mb-4 flex gap-0.5"
+                role="img"
+                aria-label="Rated 5 out of 5 stars"
+              >
                 {Array.from({ length: 5 }).map((_, s) => (
                   <Star
                     key={s}
