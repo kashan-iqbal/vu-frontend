@@ -44,3 +44,27 @@ const byCode = new Map(allCourses.map((c) => [c.code.toUpperCase(), c]));
 export function getCourseByCode(code: string): Course | undefined {
   return byCode.get(code.toUpperCase());
 }
+
+const bySubject = (() => {
+  const m = new Map<string, Course[]>();
+  for (const c of allCourses) {
+    const arr = m.get(c.subject);
+    if (arr) arr.push(c);
+    else m.set(c.subject, [c]);
+  }
+  return m;
+})();
+
+/**
+ * Other VU courses in the same subject group as `code`, for a "Related courses"
+ * internal-link block on handout pages. Builds topical clusters and gives
+ * crawlers deeper paths into the catalogue. Returns [] for unknown codes.
+ */
+export function getRelatedCourses(code: string, limit = 6): Course[] {
+  const course = getCourseByCode(code);
+  if (!course) return [];
+  const upper = code.toUpperCase();
+  return (bySubject.get(course.subject) ?? [])
+    .filter((c) => c.code.toUpperCase() !== upper)
+    .slice(0, limit);
+}

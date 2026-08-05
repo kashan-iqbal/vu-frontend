@@ -99,6 +99,12 @@ export default function RootLayout({
       width: 512,
       height: 512,
     },
+    contactPoint: {
+      "@type": "ContactPoint",
+      email: siteConfig.supportEmail,
+      contactType: "customer support",
+      availableLanguage: ["en", "ur"],
+    },
   };
 
   const websiteLd = {

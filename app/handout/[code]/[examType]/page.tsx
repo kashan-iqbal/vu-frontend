@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import HandoutClient from "@/components/HandoutClient";
 import { JsonLd } from "@/components/JsonLd";
-import { getCourseByCode } from "@/lib/courses";
+import { getCourseByCode, getRelatedCourses } from "@/lib/courses";
 import {
   EXAM_TYPES,
   getHandoutContent,
@@ -86,6 +86,15 @@ export default async function Page({
   const course = getCourseByCode(code);
   const canonical = absoluteUrl(`/handout/${code}/${examType}`);
   const otherTerm = EXAM_TYPES.find((t) => t !== examType) as ExamTypeValue;
+  const related = getRelatedCourses(code, 6);
+
+  // Course- and term-specific intro so pages don't all share one templated line.
+  const courseName = course ? `${codeUpper} (${course.title})` : codeUpper;
+  const creditBit = course?.credits ? ` ${course.credits}-credit-hour` : "";
+  const intro =
+    examType === "midterm"
+      ? `Everything you need to revise the first half of the${creditBit} ${courseName} syllabus for the Virtual University midterm — a concise handout summary, adaptive MCQ practice and AI topic review.`
+      : `Prepare for the Virtual University final term of${creditBit} ${courseName}, which leans on the second half of the syllabus and is often partly cumulative — a concise handout summary, adaptive MCQ practice and AI topic review.`;
 
   const courseLd = {
     "@context": "https://schema.org",
@@ -114,15 +123,13 @@ export default async function Page({
           {course ? `${codeUpper} — ${course.title}` : `${codeUpper} Handouts`}
         </h1>
         <p className="mt-3 text-slate-600">
-          {label} handout summary, adaptive MCQ practice and AI topic review for
-          {course ? ` ${codeUpper} (${course.title})` : ` ${codeUpper}`} at
-          Virtual University. An independent study tool — not affiliated with VU.
+          {intro} An independent study tool — not affiliated with VU.
         </p>
       </div>
 
       <HandoutClient code={code} examType={examType} initialData={handout} />
 
-      <div className="mx-auto max-w-3xl px-4 pb-12 text-sm text-slate-500">
+      <div className="mx-auto max-w-3xl px-4 pb-6 text-sm text-slate-500">
         Also revising the {termLabel(otherTerm).toLowerCase()}?{" "}
         <a
           className="font-medium text-teal-600 hover:text-teal-700"
@@ -132,6 +139,29 @@ export default async function Page({
         </a>
         .
       </div>
+
+      {related.length > 0 && (
+        <nav
+          aria-label="Related VU courses"
+          className="mx-auto max-w-3xl px-4 pb-12"
+        >
+          <h2 className="text-sm font-semibold text-blue-900">
+            Related VU courses
+          </h2>
+          <ul className="mt-3 grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2">
+            {related.map((c) => (
+              <li key={c.code}>
+                <a
+                  className="text-sm text-teal-600 hover:text-teal-700"
+                  href={`/handout/${c.code}/${examType}`}
+                >
+                  {c.code.toUpperCase()} — {c.title} {label.toLowerCase()} handout
+                </a>
+              </li>
+            ))}
+          </ul>
+        </nav>
+      )}
     </>
   );
 }

@@ -66,11 +66,16 @@ export default async function BlogPostPage({
     keywords: post.tags.join(", "),
     inLanguage: "en",
     mainEntityOfPage: { "@type": "WebPage", "@id": canonical },
+    // Article/BlogPosting rich results want an image; the site's default OG card
+    // (1200×630) is a valid, always-present asset.
+    image: absoluteUrl("/opengraph-image"),
     author: { "@type": "Organization", name: siteConfig.name, url: siteConfig.url },
     publisher: {
       "@type": "Organization",
       name: siteConfig.name,
-      logo: { "@type": "ImageObject", url: absoluteUrl("/favicon.ico") },
+      // Real logo asset (SVG is a Google-supported logo format); was the removed
+      // /favicon.ico. Kept in sync with the Organization logo in the root layout.
+      logo: { "@type": "ImageObject", url: absoluteUrl("/icon-badge.svg"), width: 512, height: 512 },
     },
   };
   const breadcrumbLd = {
@@ -109,7 +114,10 @@ export default async function BlogPostPage({
           {post.title}
         </h1>
 
-        <div className="mt-4 flex items-center gap-4 text-sm text-slate-400">
+        <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-slate-400">
+          <span>
+            By <span className="font-medium text-slate-500">{siteConfig.name}</span>
+          </span>
           <span>{formatDate(post.date)}</span>
           <span className="flex items-center gap-1">
             <Clock className="h-3.5 w-3.5" /> {post.readTime}

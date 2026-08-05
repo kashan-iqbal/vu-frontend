@@ -5,9 +5,9 @@ import { Button } from "@/components/ui/button";
 import Footer from "../components/Footer";
 
 export const metadata: Metadata = {
-  title: "About Us — Our Mission to Help Students Succeed",
+  title: "About Us — Our Mission to Help VU Students Succeed",
   description:
-    "ExamPrep AI is an independent study platform built to help university students prepare smarter with adaptive quizzes and AI-powered explanations. Learn about our vision, goals, and the students we serve.",
+    "ExamPrep AI is an independent study platform built to help Virtual University of Pakistan (VU) students prepare smarter with adaptive MCQ practice and AI explanations. Learn who builds it, why, and our non-affiliation with VU.",
   alternates: { canonical: "/about" },
 };
 
@@ -111,6 +111,42 @@ export default function AboutPage() {
               </li>
             ))}
           </ul>
+        </div>
+      </section>
+
+      {/* Who builds it — E-E-A-T: who, why, and the independence disclaimer */}
+      <section className="py-20 bg-white">
+        <div className="container max-w-3xl mx-auto px-4">
+          <h2 className="text-3xl font-bold text-blue-900 mb-6 text-center">
+            Who builds ExamPrep AI
+          </h2>
+          <div className="space-y-4 text-slate-600 leading-relaxed">
+            <p>
+              ExamPrep AI is an <strong>independent</strong> study tool built by a
+              small team for students of the{" "}
+              <strong>Virtual University of Pakistan (VU)</strong>. It grew out of
+              a simple frustration: VU exams lean heavily on MCQs and handouts,
+              but most revision is passive re-reading. We built the practice
+              workflow we wished we&rsquo;d had — one that finds your weak topics
+              and helps you fix them before exam day.
+            </p>
+            <p>
+              Our handout summaries and course lists are organised around VU&rsquo;s
+              own course codes and the midterm / final term structure. Where we
+              describe grading or exam policy, we cross-check it against the
+              official policy inside VULMS and tell you to confirm the exact split
+              for your course, because weightings change over time.
+            </p>
+            <p>
+              We are <strong>not affiliated with, endorsed by, or a substitute
+              for</strong> the Virtual University of Pakistan. We&rsquo;re an
+              independent helper on your side. Spot something inaccurate?{" "}
+              <Link href="/contact" className="font-medium text-teal-600 hover:text-teal-700">
+                Tell us
+              </Link>{" "}
+              and we&rsquo;ll fix it.
+            </p>
+          </div>
         </div>
       </section>
 
