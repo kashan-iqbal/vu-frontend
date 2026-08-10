@@ -22,9 +22,18 @@ function formatSize(bytes: number) {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function statusVariant(status: string) {
-  if (status === "approved") return "default" as const;
-  if (status === "rejected") return "destructive" as const;
+// Contributions created before the moderation feature shipped have no
+// `status` field at all (it only defaults for newly-created docs) — treat
+// that as pending everywhere the frontend reads status, same as the backend
+// aggregation does.
+function normalizeStatus(status: string | undefined | null) {
+  return status ?? "pending";
+}
+
+function statusVariant(status: string | undefined | null) {
+  const s = normalizeStatus(status);
+  if (s === "approved") return "default" as const;
+  if (s === "rejected") return "destructive" as const;
   return "secondary" as const;
 }
 
@@ -48,7 +57,7 @@ function UploadsTab() {
     {
       key: "status",
       header: "Status",
-      render: (c) => <Badge variant={statusVariant(c.status)}>{c.status}</Badge>,
+      render: (c) => <Badge variant={statusVariant(c.status)}>{normalizeStatus(c.status)}</Badge>,
     },
     { key: "uploaderName", header: "Uploader", render: (c) => c.uploaderName },
     { key: "uploaderPhone", header: "Phone", render: (c) => c.uploaderPhone },
@@ -70,7 +79,7 @@ function UploadsTab() {
               View
             </Button>
           )}
-          {c.status === "pending" && (
+          {normalizeStatus(c.status) === "pending" && (
             <>
               <Button size="sm" disabled={approve.isPending} onClick={() => approve.mutate(c._id)}>
                 Approve
@@ -208,7 +217,7 @@ function ContributorsTab() {
                       </p>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge variant={statusVariant(u.status)}>{u.status}</Badge>
+                      <Badge variant={statusVariant(u.status)}>{normalizeStatus(u.status)}</Badge>
                       {u.pdfUrl && (
                         <Button variant="outline" size="sm" onClick={() => setPreviewUrl(u.pdfUrl)}>
                           View
