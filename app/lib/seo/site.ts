@@ -21,7 +21,7 @@ export const siteConfig = {
   // Kept close to ~155 chars for search-result display; "independent" signals
   // the non-affiliation stance without over-claiming.
   description:
-    "Independent AI-powered exam prep for Virtual University (VU) students: adaptive MCQ practice, past MCQs, AI topic explanations and course handouts. Not affiliated with VU.",
+    "Independent AI-powered exam prep for Virtual University (VU) students: adaptive MCQ practice, solved past-paper MCQs, AI topic explanations and course handouts. Not affiliated with VU.",
   locale: "en_PK",
   supportEmail: "support@vuexamprep.com",
 } as const;

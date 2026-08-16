@@ -19,6 +19,7 @@ const AUTH_PAGES = ["/login", "/signup", "/forgot-password"];
 const NAV_LINKS = [
   { label: "Features", href: "/features" },
   { label: "Courses", href: "/course" },
+  { label: "GDB Help", href: "/gdb-help" },
   { label: "Blog", href: "/blog" },
   { label: "About", href: "/about" },
   { label: "Contact", href: "/contact" },

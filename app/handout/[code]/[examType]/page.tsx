@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import HandoutClient from "@/components/HandoutClient";
 import { JsonLd } from "@/components/JsonLd";
 import { getCourseByCode, getRelatedCourses } from "@/lib/courses";
+import { listPastQuizKeys } from "@/lib/api/pastQuiz.server";
 import {
   EXAM_TYPES,
   getHandoutContent,
@@ -88,6 +89,13 @@ export default async function Page({
   const otherTerm = EXAM_TYPES.find((t) => t !== examType) as ExamTypeValue;
   const related = getRelatedCourses(code, 6);
 
+  // Link to the past-papers page only when it actually has MCQs (avoids linking
+  // to an empty/noindex page). The list is lightweight + cached with the sitemap.
+  const pastKeys = await listPastQuizKeys();
+  const hasPastPapers = pastKeys.some(
+    (k) => k.code.toUpperCase() === codeUpper && k.examType === examType,
+  );
+
   // Course- and term-specific intro so pages don't all share one templated line.
   const courseName = course ? `${codeUpper} (${course.title})` : codeUpper;
   const creditBit = course?.credits ? ` ${course.credits}-credit-hour` : "";
@@ -125,6 +133,18 @@ export default async function Page({
         <p className="mt-3 text-slate-600">
           {intro} An independent study tool — not affiliated with VU.
         </p>
+        {hasPastPapers && (
+          <p className="mt-3 text-sm text-slate-500">
+            Want questions?{" "}
+            <a
+              className="font-medium text-teal-600 hover:text-teal-700"
+              href={`/past-papers/${code}/${examType}`}
+            >
+              Practise {codeUpper} {label.toLowerCase()} past paper MCQs
+            </a>{" "}
+            with answers.
+          </p>
+        )}
       </div>
 
       <HandoutClient code={code} examType={examType} initialData={handout} />

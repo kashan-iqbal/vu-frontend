@@ -21,7 +21,7 @@ export const testimonials: Testimonial[] = [
   },
   {
     quote:
-      "Practicing past MCQs with instant feedback is so much better than re-reading handouts. I actually know what I don't know now.",
+      "Solving past MCQs with instant feedback is so much better than re-reading handouts. I actually know what I don't know now.",
     name: "Sample Student",
     detail: "MGT Student, Virtual University",
   },

@@ -193,8 +193,8 @@ export default function Landing() {
               },
               {
                 step: "3",
-                title: "Practice MCQs",
-                desc: "Test yourself with past MCQs and get instant AI explanations.",
+                title: "Solve Past MCQs",
+                desc: "Solve real past-paper MCQs and get instant AI explanations for every answer.",
                 href: "/features",
               },
             ].map((item, index) => (

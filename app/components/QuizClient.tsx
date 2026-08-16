@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, ArrowRight, Loader2, Upload } from "lucide-react";
 import QuizTaker, { Question } from "./QuizTaker";
+import CrashPlanEntry from "./CrashPlanEntry";
 import { coursesBySubject } from "../data/subject";
 import { getQuizByCode } from "@/lib/api/quiz.api";
 import PdfUploadModal from "./PdfUploadModal";
@@ -150,6 +151,8 @@ export default function QuizClient({ code }: { code: string }) {
           Start Quiz
           <ArrowRight className="w-5 h-5" />
         </Button>
+
+        <CrashPlanEntry code={code} />
       </div>
 
       {/* ── Modal ── */}

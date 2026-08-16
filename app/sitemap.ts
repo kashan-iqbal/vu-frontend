@@ -2,6 +2,7 @@ import type { MetadataRoute } from "next";
 import { siteConfig } from "./lib/seo/site";
 import { blogPosts } from "./data/blog";
 import { listHandoutKeys } from "./lib/api/handout.server";
+import { listPastQuizKeys } from "./lib/api/pastQuiz.server";
 
 /**
  * Dynamic XML sitemap covering only publicly indexable pages (marketing, blog
@@ -42,5 +43,15 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
-  return [...staticRoutes, ...blogRoutes, ...handoutRoutes];
+  // Only pairs that actually have past-paper MCQs (count-gated server-side), so
+  // we never submit an empty past-papers page.
+  const pastPaperKeys = await listPastQuizKeys();
+  const pastPaperRoutes: MetadataRoute.Sitemap = pastPaperKeys.map((k) => ({
+    url: `${base}/past-papers/${k.code}/${k.examType}`,
+    lastModified: now,
+    changeFrequency: "monthly" as const,
+    priority: 0.6,
+  }));
+
+  return [...staticRoutes, ...blogRoutes, ...handoutRoutes, ...pastPaperRoutes];
 }

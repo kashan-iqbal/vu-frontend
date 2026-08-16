@@ -18,6 +18,18 @@ export const ENDPOINTS = {
   feedback: {
     submit: "/feedback",
   },
+  readiness: {
+    get: (code: string, examType: string) => `/readiness/${code}/${examType}`,
+  },
+  crashPlan: {
+    get: (code: string, examType: string) => `/crash-plan/${code}/${examType}`,
+    generate: (code: string, examType: string) =>
+      `/crash-plan/${code}/${examType}`,
+  },
+  gdb: {
+    help: "/gdb/help",
+    status: "/gdb/status",
+  },
   handout: {
     get: (code: string, examType: string) => `/handout/${code}/${examType}`,
   },

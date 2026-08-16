@@ -193,30 +193,33 @@ function ContributorsTab() {
       />
 
       <Dialog open={Boolean(activePhone)} onOpenChange={(open) => !open && setActivePhone(null)}>
-        <DialogContent className="max-w-[calc(100%-2rem)] sm:max-w-2xl">
+        <DialogContent className="flex max-h-[85vh] max-w-[calc(100%-2rem)] flex-col sm:max-w-2xl">
           <DialogHeader>
             <DialogTitle>{detail?.name ?? activePhone}</DialogTitle>
           </DialogHeader>
           {isDetailLoading ? (
             <p className="text-muted-foreground text-sm">Loading...</p>
           ) : detail ? (
-            <div className="flex flex-col gap-4">
-              <div className="flex gap-4 text-sm">
+            <div className="flex min-h-0 flex-1 flex-col gap-4">
+              <div className="flex flex-wrap gap-4 text-sm">
                 <span>Total: {detail.summary.total}</span>
                 <span className="text-emerald-600">Approved: {detail.summary.approved}</span>
                 <span className="text-destructive">Rejected: {detail.summary.rejected}</span>
                 <span className="text-muted-foreground">Pending: {detail.summary.pending}</span>
               </div>
-              <ul className="flex max-h-80 flex-col gap-2 overflow-y-auto text-sm">
+              <ul className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto pr-1 text-sm">
                 {detail.uploads.map((u) => (
-                  <li key={u._id} className="flex items-center justify-between rounded-md border p-2">
-                    <div>
-                      <p className="font-medium">{u.code}</p>
+                  <li
+                    key={u._id}
+                    className="flex shrink-0 items-center justify-between gap-3 rounded-md border border-border p-3"
+                  >
+                    <div className="flex min-w-0 flex-col gap-0.5">
+                      <p className="truncate font-medium">{u.code}</p>
                       <p className="text-muted-foreground text-xs">
                         {new Date(u.createdAt).toLocaleDateString()}
                       </p>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex shrink-0 items-center gap-2">
                       <Badge variant={statusVariant(u.status)}>{normalizeStatus(u.status)}</Badge>
                       {u.pdfUrl && (
                         <Button variant="outline" size="sm" onClick={() => setPreviewUrl(u.pdfUrl)}>

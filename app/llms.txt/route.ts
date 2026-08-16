@@ -13,8 +13,8 @@ export function GET() {
 ${siteConfig.name} is an independent, AI-powered exam-preparation platform for
 Virtual University of Pakistan (VU) students. It is not affiliated with Virtual
 University. Content is written to help VU students prepare for midterm and final
-term exams with adaptive MCQ practice, past MCQs, AI topic explanations, and
-per-course handouts.
+term exams with adaptive MCQ practice, solvable past-paper MCQs, AI topic
+explanations, and per-course handouts.
 
 ## Key pages
 - [Home](${absoluteUrl("/")}): Overview of the platform.

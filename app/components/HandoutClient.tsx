@@ -1,14 +1,35 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
+import type { ComponentPropsWithoutRef } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Loader2 } from "lucide-react";
 import TermSelector from "@/components/TermChange";
 import { NoCopy } from "@/components/NoCopy";
 import { getHandout, type Handout } from "@/lib/api/handout.api";
+import { slugify, headingText } from "@/lib/slug";
 
 type Term = "midterm" | "finalterm";
+
+// Give each heading a stable slug id so crash-plan study blocks can deep-link to a
+// section (#anchor). scroll-mt keeps the target clear of any sticky chrome.
+const heading = (Tag: "h1" | "h2" | "h3" | "h4") => {
+  const H = ({ children, ...props }: ComponentPropsWithoutRef<typeof Tag>) => (
+    <Tag id={slugify(headingText(children))} className="scroll-mt-24" {...props}>
+      {children}
+    </Tag>
+  );
+  H.displayName = `Handout${Tag}`;
+  return H;
+};
+
+const markdownComponents = {
+  h1: heading("h1"),
+  h2: heading("h2"),
+  h3: heading("h3"),
+  h4: heading("h4"),
+};
 
 export default function HandoutClient({
   code,
@@ -58,7 +79,10 @@ export default function HandoutClient({
           </p>
         ) : (
           <article className="prose prose-slate max-w-none prose-headings:text-blue-900 prose-a:text-teal-600">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              components={markdownComponents}
+            >
               {data.content}
             </ReactMarkdown>
           </article>

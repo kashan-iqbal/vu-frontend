@@ -32,6 +32,8 @@ import {
   setSoundEnabled,
 } from "@/lib/sound";
 import { InlineFeedback } from "@/components/feedback/InlineFeedback";
+import ReadinessCard from "@/components/ReadinessCard";
+import CrashPlanCard from "@/components/CrashPlanCard";
 import {
   submitQuiz,
   type QuizResult,
@@ -182,6 +184,10 @@ export default function QuizTaker({
     const passed = percentage >= detail.passScore;
     const wrongTopics = result?.wrongTopics ?? [];
 
+    // quizCode is `${examType}-${courseCode}` (e.g. "midterm-CS201").
+    const [readinessType, ...codeParts] = quizCode.split("-");
+    const readinessCode = codeParts.join("-");
+
     return (
       <div className="min-h-screen bg-white px-4 py-10 sm:py-12">
         <div className="mx-auto max-w-2xl text-center">
@@ -247,8 +253,15 @@ export default function QuizTaker({
             </div>
           </div>
 
+          {readinessCode && readinessType && (
+            <>
+              <ReadinessCard code={readinessCode} examType={readinessType} />
+              <CrashPlanCard code={readinessCode} examType={readinessType} />
+            </>
+          )}
+
           {wrongTopics.length > 0 && (
-            <div className="mb-8 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-left sm:p-6">
+            <div className="mb-8 mt-8 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-left sm:p-6">
               <p className="mb-3 font-semibold text-amber-900">
                 Topics to review
               </p>

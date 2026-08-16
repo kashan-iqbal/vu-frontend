@@ -60,7 +60,7 @@ export default function OpengraphImage() {
             AI Exam Prep for Virtual University (VU) Students
           </span>
           <span style={{ fontSize: 32, fontWeight: 500, color: "#a5f3ea", maxWidth: "920px" }}>
-            Adaptive MCQ practice · Past MCQs · AI explanations · Course handouts
+            Adaptive MCQ practice · Solve Past MCQs · AI explanations · Course handouts
           </span>
         </div>
 

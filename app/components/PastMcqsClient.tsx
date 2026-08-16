@@ -72,7 +72,7 @@ export default function PastMcqsClient({ code }: { code: string }) {
               Select Exam Type
             </h1>
             <p className="mt-1 text-sm text-slate-500">
-              Past MCQs for{" "}
+              Solve real past-paper MCQs for{" "}
               <span className="font-semibold text-slate-700">{code}</span>
             </p>
           </div>
@@ -115,7 +115,7 @@ export default function PastMcqsClient({ code }: { code: string }) {
               disabled={!pendingType}
               className="flex-1 bg-blue-900 text-white hover:bg-blue-800"
             >
-              View Past MCQs
+              Solve Past MCQs
             </Button>
           </div>
         </div>
@@ -140,10 +140,14 @@ export default function PastMcqsClient({ code }: { code: string }) {
           </button>
 
           <h1 className="text-2xl font-bold text-blue-900 sm:text-3xl">
-            Past MCQs
+            Solve Past MCQs
           </h1>
           <p className="mt-1 text-slate-600">
             <span className="font-semibold">{code}</span> · {examLabel}
+          </p>
+          <p className="mt-2 max-w-2xl text-sm text-slate-500">
+            Real questions from previous VU papers with the correct answer
+            marked — practise the ones most likely to reappear in your exam.
           </p>
         </div>
 
