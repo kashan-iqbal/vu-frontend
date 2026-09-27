@@ -29,6 +29,30 @@ export async function login(payload: LoginPayload): Promise<ActionResult> {
   }
 }
 
+// ── Google Sign-In ──
+// `credential` is the Google ID token produced by the GSI button. The backend
+// verifies it server-side (audience = GOOGLE_CLIENT_ID) and sets the SAME
+// httpOnly `token` cookie as password login, so nothing downstream differs.
+export interface GoogleLoginPayload {
+  credential: string;
+}
+
+export async function googleLogin(
+  payload: GoogleLoginPayload,
+): Promise<ActionResult> {
+  try {
+    const { data } = await browserClient.post(ENDPOINTS.auth.google, payload);
+    return { success: true, message: data.message };
+  } catch (error) {
+    return {
+      success: false,
+      message:
+        (error as ApiError).response?.data?.message ||
+        "Google login failed. Please try again.",
+    };
+  }
+}
+
 // ── Signup flow (send-otp → verify-otp → register) ──
 export interface SendOtpPayload {
   email: string;

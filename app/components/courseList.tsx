@@ -7,21 +7,12 @@ import {
   FileText,
   Brain,
   Eye,
-  PlayCircle,
+  AlarmClock,
   BookOpen,
   ChevronRight,
   Search,
 } from "lucide-react";
-import { Button } from "@/components/ui/button"; // adjust import to your path
 import Link from "next/link";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 
 type Course = {
   code: string;
@@ -53,7 +44,6 @@ export default function CourseList({
   initialQuery: string;
 }) {
   const [searchTerm, setSearchTerm] = useState(initialQuery);
-  const [comingSoonOpen, setComingSoonOpen] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
 
@@ -155,7 +145,7 @@ export default function CourseList({
                     </div>
 
                     {/* Action grid */}
-                    <div className="grid grid-cols-2 gap-4 mt-6 mb-8">
+                    <div className="grid grid-cols-2 gap-4 mt-6">
                       <Link
                         href={`/past-mcqs/${course.code}`}
                         className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 text-slate-600 hover:bg-teal-50 hover:text-teal-600 transition-colors group/link text-left"
@@ -195,26 +185,16 @@ export default function CourseList({
                           Full Handout
                         </span>
                       </button>
-                    </div>
 
-                    {/* Primary CTA */}
-                    <div className="mt-auto flex flex-col sm:flex-row gap-3 sm:gap-4">
-                      <button
-                        type="button"
-                        onClick={() => setComingSoonOpen(true)}
-                        className="w-full bg-teal-500 text-white px-4 py-3 sm:px-6 sm:py-4 rounded-lg flex items-center justify-center gap-2 sm:gap-3 text-sm sm:text-base font-bold shadow-sm hover:bg-teal-600 transition-all active:scale-95"
+                      <Link
+                        href={`/crash-plan/${course.code}`}
+                        className="col-span-2 flex items-center gap-3 p-3 rounded-lg bg-teal-50 text-teal-700 hover:bg-teal-100 transition-colors group/link text-left"
                       >
-                        <PlayCircle className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
-                        <span>Midterm Video</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setComingSoonOpen(true)}
-                        className="w-full bg-teal-500 text-white px-4 py-3 sm:px-6 sm:py-4 rounded-lg flex items-center justify-center gap-2 sm:gap-3 text-sm sm:text-base font-bold shadow-sm hover:bg-teal-600 transition-all active:scale-95"
-                      >
-                        <PlayCircle className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
-                        <span>Final Term Video</span>
-                      </button>
+                        <AlarmClock className="w-5 h-5 text-teal-600" />
+                        <span className="text-sm font-medium">
+                          Exam Crash Plan
+                        </span>
+                      </Link>
                     </div>
                   </div>
                 </article>
@@ -233,24 +213,6 @@ export default function CourseList({
           )}
         </div>
       </section>
-
-      {/* Coming soon popup (Past MCQs / AI Practice) */}
-      <Dialog open={comingSoonOpen} onOpenChange={setComingSoonOpen}>
-        <DialogContent className="text-center sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="text-blue-900">🚧 Coming soon</DialogTitle>
-            <DialogDescription>
-              We&apos;re putting the finishing touches on this feature. Please
-              check back shortly!
-            </DialogDescription>
-          </DialogHeader>
-          <DialogClose asChild>
-            <Button className="w-full bg-blue-900 font-semibold text-white hover:bg-blue-800">
-              Got it
-            </Button>
-          </DialogClose>
-        </DialogContent>
-      </Dialog>
     </>
   );
 }

@@ -1,17 +1,17 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, ArrowRight, Loader2, Upload } from "lucide-react";
 import QuizTaker, { Question } from "./QuizTaker";
-import CrashPlanEntry from "./CrashPlanEntry";
 import { coursesBySubject } from "../data/subject";
 import { getQuizByCode } from "@/lib/api/quiz.api";
-import PdfUploadModal from "./PdfUploadModal";
 
 type QuizType = "midterm" | "finalterm";
 
 export default function QuizClient({ code }: { code: string }) {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [questions, setQuestions] = useState<Question[] | null>(null);
 
@@ -19,10 +19,9 @@ export default function QuizClient({ code }: { code: string }) {
   const [showModal, setShowModal] = useState(false);
   const [selectedType, setSelectedType] = useState<QuizType | null>(null);
   const [modalError, setModalError] = useState<string | null>(null);
-  const [canUpload, setCanUpload] = useState(false);
-
-  // ── PDF upload journey ──
-  const [uploadOpen, setUploadOpen] = useState(false);
+  // True when the course has no questions yet → offer the tracked contribution
+  // flow (upload the source PDF on the /contribute page) instead of a quiz.
+  const [noContent, setNoContent] = useState(false);
 
   const currentCourse = Object.values(coursesBySubject)
     .flat()
@@ -40,7 +39,7 @@ export default function QuizClient({ code }: { code: string }) {
   const handleOpenModal = () => {
     setSelectedType(null);
     setModalError(null);
-    setCanUpload(false);
+    setNoContent(false);
     setShowModal(true);
   };
 
@@ -55,6 +54,7 @@ export default function QuizClient({ code }: { code: string }) {
 
     setLoading(true);
     setModalError(null);
+    setNoContent(false);
 
     try {
       const data = await getQuizByCode(quizCode);
@@ -62,10 +62,12 @@ export default function QuizClient({ code }: { code: string }) {
       setShowModal(false);
     } catch (e) {
       const err = e as {
-        response?: { data?: { message?: string; uploadPdf?: boolean } };
+        response?: { status?: number; data?: { message?: string } };
         message?: string;
       };
-      setCanUpload(Boolean(err.response?.data?.uploadPdf));
+      // 404 = no questions for this course yet → route the student to contribute
+      // its PDF (tracked) rather than showing a generic error.
+      setNoContent(err.response?.status === 404);
       setModalError(
         err?.response?.data?.message || err?.message || "Something went wrong",
       );
@@ -151,8 +153,6 @@ export default function QuizClient({ code }: { code: string }) {
           Start Quiz
           <ArrowRight className="w-5 h-5" />
         </Button>
-
-        <CrashPlanEntry code={code} />
       </div>
 
       {/* ── Modal ── */}
@@ -190,16 +190,20 @@ export default function QuizClient({ code }: { code: string }) {
 
             {modalError && <p className="text-sm text-red-500">{modalError}</p>}
 
-            {canUpload && (
-              <button
-                onClick={() => {
-                  setShowModal(false);
-                  setUploadOpen(true);
-                }}
-                className="flex w-full items-center justify-center gap-2 rounded-lg border border-blue-900 px-4 py-2.5 text-sm font-semibold text-blue-900 transition-colors hover:bg-blue-50"
-              >
-                <Upload className="h-4 w-4" /> Upload course PDF
-              </button>
+            {noContent && (
+              <div className="space-y-2 rounded-xl border border-blue-100 bg-blue-50 p-3 text-left">
+                <p className="text-sm text-blue-900">
+                  This course doesn&apos;t have questions yet. Have its handout or
+                  notes PDF? Contribute it and help other {code} students — we&apos;ll
+                  turn it into practice questions.
+                </p>
+                <button
+                  onClick={() => router.push(`/contribute?code=${code}`)}
+                  className="flex w-full items-center justify-center gap-2 rounded-lg bg-blue-900 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-blue-800"
+                >
+                  <Upload className="h-4 w-4" /> Contribute {code} PDF
+                </button>
+              </div>
             )}
 
             <div className="flex gap-3 pt-2">
@@ -229,14 +233,6 @@ export default function QuizClient({ code }: { code: string }) {
           </div>
         </div>
       )}
-
-      {/* ── PDF upload journey ── */}
-      <PdfUploadModal
-        open={uploadOpen}
-        onClose={() => setUploadOpen(false)}
-        code={code}
-        courseTitle={detail.name}
-      />
     </div>
   );
 }

@@ -9,6 +9,8 @@ import {
   type ExamTypeValue,
 } from "@/lib/api/pastQuiz.server";
 import { siteConfig, absoluteUrl } from "@/lib/seo/site";
+import { canonicalCourseCode } from "@/lib/courseCode";
+import { tryListHandoutKeys } from "@/lib/api/handout.server";
 
 // Cap rendered questions so very large courses don't ship an enormous document
 // (hurts LCP); the rest live in the interactive practice. SEO value is well
@@ -18,6 +20,17 @@ const LETTERS = ["A", "B", "C", "D"];
 
 const termLabel = (t: ExamTypeValue) =>
   t === "midterm" ? "Midterm" : "Final Term";
+
+/**
+ * See the twin comment in app/handout/[code]/[examType]/page.tsx. `notFound()`
+ * renders with HTTP 200 here too, so only the codes below are valid URLs and
+ * everything else gets a real 404 from the routing layer.
+ *
+ * TRADE-OFF: newly-imported past papers need a rebuild (Vercel Deploy Hook), since
+ * `generateStaticParams` runs only at build time. Safe only because
+ * `listPastQuizKeys()` now throws instead of returning [] when the API is down.
+ */
+export const dynamicParams = false;
 
 export async function generateStaticParams() {
   const keys = await listPastQuizKeys();
@@ -30,23 +43,30 @@ export async function generateMetadata({
   params: Promise<{ code: string; examType: string }>;
 }): Promise<Metadata> {
   const { code, examType } = await params;
-  if (!isExamType(examType)) {
-    return { title: "Past papers not found", robots: { index: false, follow: false } };
-  }
-  const mcqs = await getPastMcqs(code, examType);
-  if (mcqs.length === 0) {
-    return { title: "Past papers not found", robots: { index: false, follow: false } };
-  }
+  const codeUpper = canonicalCourseCode(code);
+
+  // Self-referential canonical on EVERY branch, including the not-found ones — they
+  // used to fall through to the root layout's `canonical: "/"` and claim to be the
+  // homepage.
+  const canonical = `/past-papers/${codeUpper}/${examType}`;
+  const notFoundMeta: Metadata = {
+    title: "Past papers not found",
+    robots: { index: false, follow: false },
+    alternates: { canonical },
+  };
+
+  if (!isExamType(examType)) return notFoundMeta;
+
+  const mcqs = await getPastMcqs(codeUpper, examType);
+  if (mcqs.length === 0) return notFoundMeta;
 
   const label = termLabel(examType);
-  const codeUpper = code.toUpperCase();
-  const course = getCourseByCode(code);
+  const course = getCourseByCode(codeUpper);
   const name = course ? `${codeUpper} ${course.title}` : codeUpper;
   const title = `${name} — ${label} Past Papers & Solved MCQs`;
   const description = course
     ? `${mcqs.length}+ solved ${label.toLowerCase()} past paper MCQs for ${codeUpper} (${course.title}) at Virtual University (VU), with correct answers. Free practice — independent VU study tool, not affiliated with VU.`
     : `Solved ${label.toLowerCase()} past paper MCQs for VU course ${codeUpper}, with correct answers. Independent Virtual University study tool.`;
-  const canonical = `/past-papers/${code}/${examType}`;
 
   return {
     title,
@@ -68,31 +88,61 @@ export default async function Page({
   params: Promise<{ code: string; examType: string }>;
 }) {
   const { code, examType } = await params;
+  const codeUpper = canonicalCourseCode(code);
   if (!isExamType(examType)) return notFound();
 
-  const mcqs = await getPastMcqs(code, examType);
+  const mcqs = await getPastMcqs(codeUpper, examType);
   if (mcqs.length === 0) return notFound();
 
   const label = termLabel(examType);
-  const codeUpper = code.toUpperCase();
-  const course = getCourseByCode(code);
+  const course = getCourseByCode(codeUpper);
   const name = course ? `${codeUpper} — ${course.title}` : `${codeUpper} Past Papers`;
-  const canonical = absoluteUrl(`/past-papers/${code}/${examType}`);
+  const canonical = absoluteUrl(`/past-papers/${codeUpper}/${examType}`);
   const shown = mcqs.slice(0, MAX_RENDERED);
-  const related = getRelatedCourses(code, 6);
+  const related = getRelatedCourses(codeUpper, 6);
+
+  // This page used to link to the handout UNCONDITIONALLY, while the handout page
+  // guarded its link back. For a course with MCQs but no handout that was a link
+  // into notFound() — and now that unknown codes 404 for real, a broken link.
+  // Lenient lister: a missing list hides the link, it never breaks the page.
+  const handoutKeys = await tryListHandoutKeys();
+  const hasHandout =
+    handoutKeys.length === 0 ||
+    handoutKeys.some(
+      (k) => k.code.toUpperCase() === codeUpper && k.examType === examType,
+    );
+
+  // Only link related courses that actually have past papers for this term —
+  // getRelatedCourses() comes from the static catalogue, not the MCQ list.
+  const pastKeys = await listPastQuizKeys();
+  const existingPast = new Set(
+    pastKeys.map((k) => `${k.code.toUpperCase()}/${k.examType}`),
+  );
+  const relatedWithPapers = related.filter((c) =>
+    existingPast.has(`${c.code.toUpperCase()}/${examType}`),
+  );
 
   const breadcrumbLd = {
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     itemListElement: [
       { "@type": "ListItem", position: 1, name: "Home", item: siteConfig.url },
+      ...(hasHandout
+        ? [
+            {
+              "@type": "ListItem",
+              position: 2,
+              name: `${codeUpper} Handouts`,
+              item: absoluteUrl(`/handout/${codeUpper}/${examType}`),
+            },
+          ]
+        : []),
       {
         "@type": "ListItem",
-        position: 2,
-        name: `${codeUpper} Handouts`,
-        item: absoluteUrl(`/handout/${code}/${examType}`),
+        position: hasHandout ? 3 : 2,
+        name: `${codeUpper} ${label} Past Papers`,
+        item: canonical,
       },
-      { "@type": "ListItem", position: 3, name: `${codeUpper} ${label} Past Papers`, item: canonical },
     ],
   };
 
@@ -111,13 +161,18 @@ export default async function Page({
           question style and test your recall. An independent study tool — not
           affiliated with VU.
         </p>
-        <p className="mt-3 text-sm text-slate-500">
-          Prefer a summary first?{" "}
-          <a className="font-medium text-teal-600 hover:text-teal-700" href={`/handout/${code}/${examType}`}>
-            Read the {codeUpper} {label.toLowerCase()} handout
-          </a>
-          .
-        </p>
+        {hasHandout && (
+          <p className="mt-3 text-sm text-slate-500">
+            Prefer a summary first?{" "}
+            <a
+              className="font-medium text-teal-600 hover:text-teal-700"
+              href={`/handout/${codeUpper}/${examType}`}
+            >
+              Read the {codeUpper} {label.toLowerCase()} handout
+            </a>
+            .
+          </p>
+        )}
       </div>
 
       <ol className="mx-auto mt-8 max-w-3xl space-y-6 px-4 pb-6">
@@ -157,13 +212,13 @@ export default async function Page({
         </p>
       )}
 
-      {related.length > 0 && (
+      {relatedWithPapers.length > 0 && (
         <nav aria-label="Related VU courses" className="mx-auto max-w-3xl px-4 pb-12">
           <h2 className="text-sm font-semibold text-blue-900">Related VU courses</h2>
           <ul className="mt-3 grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2">
-            {related.map((c) => (
+            {relatedWithPapers.map((c) => (
               <li key={c.code}>
-                <a className="text-sm text-teal-600 hover:text-teal-700" href={`/past-papers/${c.code}/${examType}`}>
+                <a className="text-sm text-teal-600 hover:text-teal-700" href={`/past-papers/${c.code.toUpperCase()}/${examType}`}>
                   {c.code.toUpperCase()} — {c.title} {label.toLowerCase()} past papers
                 </a>
               </li>

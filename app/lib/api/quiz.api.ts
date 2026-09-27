@@ -9,19 +9,6 @@ export async function getQuizByCode(quizCode: string): Promise<Question[]> {
   return data;
 }
 
-// Upload a course PDF (multipart) — the backend emails it to the admin inbox.
-// Override the instance's JSON content-type so axios sets the multipart boundary,
-// and raise the timeout since uploads can be large.
-export async function uploadCoursePdf(
-  form: FormData,
-): Promise<{ success: boolean; message: string }> {
-  const { data } = await browserClient.post(ENDPOINTS.quiz.uploadPdf, form, {
-    headers: { "Content-Type": "multipart/form-data" },
-    timeout: 60000,
-  });
-  return data;
-}
-
 // Each submitted question carries the option the user picked (`selectedOption`).
 // The backend marks an answer wrong when selectedOption !== correctAnswer.
 export interface QuizSubmissionItem extends Question {

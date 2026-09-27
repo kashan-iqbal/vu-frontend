@@ -2,7 +2,6 @@ export const ENDPOINTS = {
   quiz: {
     getByCode: (code: string) => `/quiz/${code}`,
     submitQuiz: "/quiz/submitQuiz",
-    uploadPdf: "/quiz/upload-pdf",
   },
   topicReview: {
     get: (quizCode: string) => `/topic-review/${quizCode}`,

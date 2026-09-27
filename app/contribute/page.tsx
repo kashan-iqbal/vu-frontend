@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import ContributeClient from "../components/ContributeClient";
 
 // Public and indexable: this page lives outside the (other) group precisely so
@@ -12,5 +13,10 @@ export const metadata: Metadata = {
 };
 
 export default function Page() {
-  return <ContributeClient />;
+  // useSearchParams (for ?code=) requires a Suspense boundary on a static route.
+  return (
+    <Suspense>
+      <ContributeClient />
+    </Suspense>
+  );
 }

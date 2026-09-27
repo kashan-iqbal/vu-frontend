@@ -6,7 +6,7 @@ import { Mail, Lock, ArrowRight } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { useRouter } from "next/navigation";
 import { useQueryClient } from "@tanstack/react-query";
-import { useLogin } from "@/hooks/use-auth";
+import { useLogin, useGoogleAuth } from "@/hooks/use-auth";
 import { toast } from "sonner";
 import { GoogleLogin, type CredentialResponse } from "@react-oauth/google";
 import { loginSchema, fieldErrors } from "@/lib/validation/auth.schema";
@@ -20,6 +20,7 @@ export default function Login() {
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const loginMutation = useLogin();
+  const googleMutation = useGoogleAuth();
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,33 +51,32 @@ export default function Login() {
     });
   };
 
-  // const handleGoogleSuccess = async (
-  //   credentialResponse: CredentialResponse,
-  // ) => {
-  //   try {
-  //     const res = await fetch(
-  //       `${process.env.NEXT_PUBLIC_API_BASE_URL}/auth/google`,
-  //       {
-  //         method: "POST",
-  //         headers: { "Content-Type": "application/json" },
-  //         credentials: "include",
-  //         body: JSON.stringify({ credential: credentialResponse.credential }),
-  //       },
-  //     );
+  const handleGoogleSuccess = (credentialResponse: CredentialResponse) => {
+    const credential = credentialResponse.credential;
+    if (!credential) {
+      toast.error("Google login failed. Please try again.");
+      return;
+    }
 
-  //     const data = await res.json();
-  //     if (!res.ok) {
-  //       toast.error(data.message || "Google login failed");
-  //       return;
-  //     }
-
-  //     toast.success("Logged in with Google!");
-  //     await queryClient.invalidateQueries({ queryKey: ["me"] });
-  //     router.push("/course");
-  //   } catch {
-  //     toast.error("Google login failed. Please try again.");
-  //   }
-  // };
+    googleMutation.mutate(
+      { credential },
+      {
+        onSuccess: async (result) => {
+          if (result.success) {
+            // Same post-login steps as the email form: the cookie is set, so
+            // refetch the cached (logged-out) /user/me before navigating.
+            await queryClient.invalidateQueries({ queryKey: ["me"] });
+            router.push(readNextParam() ?? "/");
+          } else {
+            toast.error(result.message ?? "Google login failed.");
+          }
+        },
+        onError: () => {
+          toast.error("Something went wrong. Please try again.");
+        },
+      },
+    );
+  };
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-blue-950 via-blue-900 to-teal-800 flex items-center justify-center px-4 py-8">
@@ -103,23 +103,30 @@ export default function Login() {
         {/* Card */}
         <div className="bg-white rounded-2xl shadow-2xl p-8">
           {/*
-            Google Login Button
-            <div className="mb-6 flex justify-center">
-              <GoogleLogin
-                onSuccess={handleGoogleSuccess}
-                onError={() => toast.error("Google login failed")}
-                theme="outline"
-                size="large"
-                text="continue_with"
-                width="400"
-              />
-            </div>
+            Google Sign-In. The GSI script comes from GoogleOAuthProvider in
+            app/(auth)/layout.tsx, so it only loads on the auth pages.
+            width 384 = the card's inner width (max-w-md minus p-8 either side).
+          */}
+          <div
+            className={`mb-6 flex justify-center ${
+              googleMutation.isPending ? "pointer-events-none opacity-60" : ""
+            }`}
+          >
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => toast.error("Google login failed")}
+              theme="outline"
+              size="large"
+              text="continue_with"
+              width="384"
+            />
+          </div>
 
-            <div className="mb-6 flex items-center gap-4">
-              <div className="h-px flex-1 bg-slate-200" />
-              <span className="text-sm text-slate-400">or log in with email</span>
-              <div className="h-px flex-1 bg-slate-200" />
-            </div> */}
+          <div className="mb-6 flex items-center gap-4">
+            <div className="h-px flex-1 bg-slate-200" />
+            <span className="text-sm text-slate-400">or log in with email</span>
+            <div className="h-px flex-1 bg-slate-200" />
+          </div>
 
           <form onSubmit={handleLogin} className="space-y-5" noValidate>
             <div className="space-y-2">

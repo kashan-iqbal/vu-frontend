@@ -1,75 +1,25 @@
 import "server-only";
 import { cache } from "react";
 import type { Handout } from "./handout.api";
+import {
+  API_BASE,
+  NOT_FOUND,
+  fetchContentJson,
+  tryFetchContentJson,
+} from "./upstream";
 
 /**
  * Server-side handout fetchers used for SSG/ISR and the sitemap.
  *
- * Both backend endpoints used here are public (no cookie required), so
- * rendering this on the server exposes nothing that the browser wasn't already
- * fetching client-side — it only puts the content where crawlers can read it.
+ * Both endpoints are public (no cookie required), so rendering them on the
+ * server exposes nothing the browser wasn't already fetching client-side — it
+ * only puts the content where crawlers can read it.
  *
- * Every call is resilient: if the API is unreachable at build time the build
- * still succeeds, and pages/sitemap entries fill in on the next revalidation.
+ * Failure policy lives in ./upstream.ts and is the important part: a 404 means
+ * "absent" (noindex is correct), and EVERYTHING ELSE THROWS. These functions
+ * deliberately no longer degrade to null/[] on a transient failure, because that
+ * is exactly how ~180 pages were frozen as noindex in 2026-08.
  */
-
-const API_BASE = (
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3030/api/v1"
-).replace(/\/$/, "");
-
-// Handout summaries change rarely; refresh once a day without a redeploy.
-const REVALIDATE_SECONDS = 86_400;
-
-// A 404 is the ONLY signal that a handout is genuinely absent. Any other failure
-// (429 rate-limit, 5xx, network) is transient and must never be baked into a
-// noindex page — so we retry it. Without this, a throttled build froze ~half the
-// handout pages as noindex "not found" even though the content existed.
-const MAX_ATTEMPTS = 4;
-
-/** Sentinel: the endpoint returned 404 — the resource genuinely does not exist. */
-const NOT_FOUND = Symbol("not-found");
-
-function backoffMs(attempt: number, retryAfter: string | null): number {
-  const parsed = retryAfter ? Number(retryAfter) : NaN;
-  if (Number.isFinite(parsed)) return Math.min(parsed * 1000, 8_000);
-  return Math.min(300 * 2 ** attempt, 8_000); // 300ms, 600, 1200, 2400…
-}
-
-const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
-
-/**
- * Fetch JSON, distinguishing "genuinely absent" (404 → NOT_FOUND) from transient
- * failures (retried with backoff). Returns `null` only after retries are
- * exhausted, so the build still succeeds if the API is truly down — it just
- * degrades to on-demand rendering rather than freezing a wrong noindex page.
- */
-async function fetchJsonResilient<T>(
-  url: string,
-): Promise<T | typeof NOT_FOUND | null> {
-  for (let attempt = 0; attempt < MAX_ATTEMPTS; attempt++) {
-    try {
-      const res = await fetch(url, {
-        next: { revalidate: REVALIDATE_SECONDS, tags: ["handouts"] },
-      });
-      if (res.status === 404) return NOT_FOUND;
-      if (res.ok) return (await res.json()) as T;
-      // 429 / 5xx — transient. Retry unless we're out of attempts.
-      if (attempt < MAX_ATTEMPTS - 1) {
-        await sleep(backoffMs(attempt, res.headers.get("retry-after")));
-        continue;
-      }
-      return null;
-    } catch {
-      // Network error — transient. Retry unless we're out of attempts.
-      if (attempt < MAX_ATTEMPTS - 1) {
-        await sleep(backoffMs(attempt, null));
-        continue;
-      }
-      return null;
-    }
-  }
-  return null;
-}
 
 export interface HandoutKey {
   code: string;
@@ -83,15 +33,7 @@ export function isExamType(value: string): value is ExamTypeValue {
   return (EXAM_TYPES as readonly string[]).includes(value);
 }
 
-/**
- * Every { code, examType } pair that actually HAS a handout. This — not the
- * static course catalogue — is what drives the generated pages and the sitemap,
- * so we never publish an empty page. Returns [] if the API is unavailable.
- */
-export async function listHandoutKeys(): Promise<HandoutKey[]> {
-  // Retries transient failures so a rate-limited build doesn't silently drop
-  // handout routes/sitemap entries. Degrades to [] only if the API is truly down.
-  const data = await fetchJsonResilient<unknown>(`${API_BASE}/handout`);
+function parseKeys(data: unknown): HandoutKey[] {
   if (!Array.isArray(data)) return [];
   return data.filter(
     (h): h is HandoutKey =>
@@ -100,21 +42,47 @@ export async function listHandoutKeys(): Promise<HandoutKey[]> {
 }
 
 /**
- * A single handout's content, or null when it doesn't exist (404) or the API is
- * down. Wrapped in React `cache()` so `generateMetadata` and the page component
- * share ONE request — they can never disagree (no "200 body + noindex head"),
- * and it halves calls to the rate-limited backend.
+ * Every { code, examType } pair that actually HAS a handout. This — not the
+ * static course catalogue — drives `generateStaticParams` and the sitemap, so we
+ * never publish an empty page.
+ *
+ * @throws UpstreamUnavailableError if the API cannot be reached. Callers that
+ *         decide what exists (build params, sitemap) MUST let this propagate:
+ *         silently returning [] would 404 or un-list the whole catalogue.
+ */
+export async function listHandoutKeys(): Promise<HandoutKey[]> {
+  const data = await fetchContentJson<unknown>(`${API_BASE}/handout`, "handouts");
+  if (data === NOT_FOUND) return [];
+  return parseKeys(data);
+}
+
+/**
+ * Lenient variant for OPTIONAL cross-linking only (e.g. "does a handout exist,
+ * so should I render a link to it?"). Returns [] if the API is unreachable,
+ * which merely omits a link — it cannot affect indexability.
+ */
+export async function tryListHandoutKeys(): Promise<HandoutKey[]> {
+  const data = await tryFetchContentJson<unknown>(`${API_BASE}/handout`, "handouts", []);
+  return parseKeys(data);
+}
+
+/**
+ * A single handout's content, or `null` ONLY when the API returned 404.
+ *
+ * Wrapped in React `cache()` so `generateMetadata` and the page component share
+ * one request and can never disagree (no "200 body + noindex head"), and so we
+ * halve the load on a slow backend.
+ *
+ * @throws UpstreamUnavailableError on any transient failure, so a flaky API can
+ *         never be misread as "this handout doesn't exist".
  */
 export const getHandoutContent = cache(async function getHandoutContent(
   code: string,
   examType: string,
 ): Promise<Handout | null> {
   const url = `${API_BASE}/handout/${encodeURIComponent(code)}/${encodeURIComponent(examType)}`;
-  const data = await fetchJsonResilient<Handout | null>(url);
-  // NOT_FOUND (real 404) and null (transient, retries exhausted) both mean "no
-  // content to render" → the page noindexes. But a transient failure is now only
-  // reached after MAX_ATTEMPTS retries, so a throttled build no longer poisons a
-  // page with real content.
-  if (data === NOT_FOUND || data === null) return null;
+  const data = await fetchContentJson<Handout | null>(url, "handouts");
+  if (data === NOT_FOUND) return null;
+  // A 200 with no `content` is a real, empty record — genuinely nothing to index.
   return data?.content ? data : null;
 });

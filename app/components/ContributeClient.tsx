@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Loader2, Search, CheckCircle, Upload, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -19,8 +20,17 @@ const CARDS: CourseCard[] = PAST_PAPER_CODES.map((code) => ({
 
 export default function ContributeClient() {
   const queryClient = useQueryClient();
-  const [search, setSearch] = useState("");
-  const [active, setActive] = useState<CourseCard | null>(null);
+
+  // Deep-link support: /contribute?code=CS615 (e.g. from a quiz with no questions
+  // yet) pre-filters to that course and opens its upload dialog when the code is
+  // on the allowlist. Read once at mount — no effect, no hydration flip.
+  const params = useSearchParams();
+  const initialCode = (params.get("code") ?? "").toUpperCase();
+  const initialCard =
+    CARDS.find((c) => c.code.toUpperCase() === initialCode) ?? null;
+
+  const [search, setSearch] = useState(() => initialCode);
+  const [active, setActive] = useState<CourseCard | null>(() => initialCard);
 
   const { data, isPending, isError, refetch, isFetching } = useQuery({
     queryKey: ["contribution-codes"],

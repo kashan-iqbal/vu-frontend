@@ -3,15 +3,17 @@ import { notFound } from "next/navigation";
 import HandoutClient from "@/components/HandoutClient";
 import { JsonLd } from "@/components/JsonLd";
 import { getCourseByCode, getRelatedCourses } from "@/lib/courses";
-import { listPastQuizKeys } from "@/lib/api/pastQuiz.server";
+import { tryListPastQuizKeys } from "@/lib/api/pastQuiz.server";
 import {
   EXAM_TYPES,
   getHandoutContent,
   isExamType,
   listHandoutKeys,
+  tryListHandoutKeys,
   type ExamTypeValue,
 } from "@/lib/api/handout.server";
 import { siteConfig, absoluteUrl } from "@/lib/seo/site";
+import { canonicalCourseCode } from "@/lib/courseCode";
 
 const termLabel = (t: ExamTypeValue) =>
   t === "midterm" ? "Midterm" : "Final Term";
@@ -25,6 +27,25 @@ const termLabel = (t: ExamTypeValue) =>
  * If the API is unreachable at build time this returns [] and pages are
  * generated on demand (ISR) instead of failing the build.
  */
+/**
+ * Only the codes emitted by `generateStaticParams` below are valid URLs. Anything
+ * else returns a REAL 404 from the routing layer.
+ *
+ * WHY: `notFound()` inside this page renders with HTTP **200** on Vercel (verified
+ * 2026-09-26 on an uncached MISS), so /handout/<anything>/<term> was a 200 + noindex
+ * soft-404 — an unbounded URL space Google had to crawl and file. `dynamicParams =
+ * false` is the only reliable way to get a true 404 here.
+ *
+ * TRADE-OFF: a newly-added handout is no longer picked up by the next ISR
+ * revalidation — it needs a rebuild, because `generateStaticParams` runs only at
+ * build time. Trigger a Vercel Deploy Hook after importing handouts.
+ *
+ * Safe ONLY because `listHandoutKeys()` now THROWS when the API is unreachable
+ * (see lib/api/upstream.ts). If it still returned [] on failure, a build during an
+ * API outage would 404 the entire catalogue.
+ */
+export const dynamicParams = false;
+
 export async function generateStaticParams() {
   const keys = await listHandoutKeys();
   return keys.map((k) => ({ code: k.code, examType: k.examType }));
@@ -36,24 +57,31 @@ export async function generateMetadata({
   params: Promise<{ code: string; examType: string }>;
 }): Promise<Metadata> {
   const { code, examType } = await params;
-  if (!isExamType(examType)) {
-    return { title: "Handout not found", robots: { index: false, follow: false } };
-  }
+  const codeUpper = canonicalCourseCode(code);
 
-  const handout = await getHandoutContent(code, examType);
-  if (!handout) {
-    return { title: "Handout not found", robots: { index: false, follow: false } };
-  }
+  // Every branch below sets its OWN canonical. Without this the early returns
+  // inherited the root layout's `canonical: "/"`, so a broken handout page told
+  // Google it was a duplicate of the homepage — which is why the pages poisoned in
+  // 2026-08 got consolidated away rather than merely dropped.
+  const canonical = `/handout/${codeUpper}/${examType}`;
+  const notFoundMeta: Metadata = {
+    title: "Handout not found",
+    robots: { index: false, follow: false },
+    alternates: { canonical },
+  };
+
+  if (!isExamType(examType)) return notFoundMeta;
+
+  const handout = await getHandoutContent(codeUpper, examType);
+  if (!handout) return notFoundMeta;
 
   const label = termLabel(examType);
-  const codeUpper = code.toUpperCase();
-  const course = getCourseByCode(code);
+  const course = getCourseByCode(codeUpper);
   const name = course ? `${codeUpper} ${course.title}` : codeUpper;
   const title = `${name} — ${label} Handouts & MCQs`;
   const description = course
     ? `${label} exam preparation for ${codeUpper} (${course.title}) at Virtual University (VU): a concise handout summary, adaptive MCQ practice and AI topic review. Independent VU study tool — not affiliated with VU.`
     : `${label} handouts and MCQ practice for VU course ${codeUpper}. Independent Virtual University study tool.`;
-  const canonical = `/handout/${code}/${examType}`;
 
   return {
     title,
@@ -75,26 +103,41 @@ export default async function Page({
   params: Promise<{ code: string; examType: string }>;
 }) {
   const { code, examType } = await params;
+  const codeUpper = canonicalCourseCode(code);
   if (!isExamType(examType)) return notFound();
 
   // Server-fetched so the summary is in the initial HTML (crawlable). This
   // endpoint is public, so no access rules change — only where it's rendered.
-  const handout = await getHandoutContent(code, examType);
+  const handout = await getHandoutContent(codeUpper, examType);
   if (!handout) return notFound();
 
   const label = termLabel(examType);
-  const codeUpper = code.toUpperCase();
-  const course = getCourseByCode(code);
-  const canonical = absoluteUrl(`/handout/${code}/${examType}`);
+  const course = getCourseByCode(codeUpper);
+  const canonical = absoluteUrl(`/handout/${codeUpper}/${examType}`);
   const otherTerm = EXAM_TYPES.find((t) => t !== examType) as ExamTypeValue;
-  const related = getRelatedCourses(code, 6);
+  const related = getRelatedCourses(codeUpper, 6);
 
-  // Link to the past-papers page only when it actually has MCQs (avoids linking
-  // to an empty/noindex page). The list is lightweight + cached with the sitemap.
-  const pastKeys = await listPastQuizKeys();
+  // Link to past papers only when they exist (that page now returns a hard 404 when
+  // they don't). Deliberately the LENIENT lister: this decides a link, not
+  // indexability, so an API hiccup must drop the link rather than fail the render.
+  const pastKeys = await tryListPastQuizKeys();
   const hasPastPapers = pastKeys.some(
     (k) => k.code.toUpperCase() === codeUpper && k.examType === examType,
   );
+
+  // Now that unknown codes return a HARD 404 (dynamicParams = false), every
+  // outgoing /handout link must be checked against the real handout list. The
+  // "related courses" block is built from the STATIC catalogue (289 courses), most
+  // of which have no handout — unguarded it would emit up to 6 broken links per
+  // page. Lenient lister: a missing list hides links, it never breaks the page.
+  const handoutKeys = await tryListHandoutKeys();
+  const existingHandouts = new Set(
+    handoutKeys.map((k) => `${k.code.toUpperCase()}/${k.examType}`),
+  );
+  const hasHandout = (c: string, t: string) =>
+    existingHandouts.size === 0 || existingHandouts.has(`${c.toUpperCase()}/${t}`);
+  const hasOtherTerm = hasHandout(codeUpper, otherTerm);
+  const relatedWithHandouts = related.filter((c) => hasHandout(c.code, examType));
 
   // Course- and term-specific intro so pages don't all share one templated line.
   const courseName = course ? `${codeUpper} (${course.title})` : codeUpper;
@@ -138,7 +181,7 @@ export default async function Page({
             Want questions?{" "}
             <a
               className="font-medium text-teal-600 hover:text-teal-700"
-              href={`/past-papers/${code}/${examType}`}
+              href={`/past-papers/${codeUpper}/${examType}`}
             >
               Practise {codeUpper} {label.toLowerCase()} past paper MCQs
             </a>{" "}
@@ -147,20 +190,22 @@ export default async function Page({
         )}
       </div>
 
-      <HandoutClient code={code} examType={examType} initialData={handout} />
+      <HandoutClient code={codeUpper} examType={examType} initialData={handout} />
 
-      <div className="mx-auto max-w-3xl px-4 pb-6 text-sm text-slate-500">
-        Also revising the {termLabel(otherTerm).toLowerCase()}?{" "}
-        <a
-          className="font-medium text-teal-600 hover:text-teal-700"
-          href={`/handout/${code}/${otherTerm}`}
-        >
-          Read the {codeUpper} {termLabel(otherTerm).toLowerCase()} handout
-        </a>
-        .
-      </div>
+      {hasOtherTerm && (
+        <div className="mx-auto max-w-3xl px-4 pb-6 text-sm text-slate-500">
+          Also revising the {termLabel(otherTerm).toLowerCase()}?{" "}
+          <a
+            className="font-medium text-teal-600 hover:text-teal-700"
+            href={`/handout/${codeUpper}/${otherTerm}`}
+          >
+            Read the {codeUpper} {termLabel(otherTerm).toLowerCase()} handout
+          </a>
+          .
+        </div>
+      )}
 
-      {related.length > 0 && (
+      {relatedWithHandouts.length > 0 && (
         <nav
           aria-label="Related VU courses"
           className="mx-auto max-w-3xl px-4 pb-12"
@@ -169,11 +214,11 @@ export default async function Page({
             Related VU courses
           </h2>
           <ul className="mt-3 grid grid-cols-1 gap-x-6 gap-y-2 sm:grid-cols-2">
-            {related.map((c) => (
+            {relatedWithHandouts.map((c) => (
               <li key={c.code}>
                 <a
                   className="text-sm text-teal-600 hover:text-teal-700"
-                  href={`/handout/${c.code}/${examType}`}
+                  href={`/handout/${c.code.toUpperCase()}/${examType}`}
                 >
                   {c.code.toUpperCase()} — {c.title} {label.toLowerCase()} handout
                 </a>
