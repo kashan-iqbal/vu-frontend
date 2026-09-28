@@ -23,9 +23,49 @@ import "server-only";
 export const NOT_FOUND = Symbol("upstream-not-found");
 export type NotFound = typeof NOT_FOUND;
 
-export const API_BASE = (
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:3030/api/v1"
-).replace(/\/$/, "");
+const RAW_API_BASE_ENV = process.env.NEXT_PUBLIC_API_BASE_URL;
+
+/**
+ * Off-platform the localhost default is a convenience. Inside a Vercel build
+ * container nothing listens on :3030, so an unset variable silently spends six
+ * retries and ~30 s of backoff before failing as "fetch failed" — which reads
+ * like a backend outage rather than a missing setting (2026-09-28). A variable
+ * scoped to Production only does exactly this to every Preview build.
+ */
+if (!RAW_API_BASE_ENV && process.env.VERCEL) {
+  throw new Error(
+    `NEXT_PUBLIC_API_BASE_URL is not set for VERCEL_ENV=${process.env.VERCEL_ENV ?? "unknown"}. ` +
+      `Set it to e.g. https://api.vuexamprep.com/api/v1 and tick Production, ` +
+      `Preview and Development — scoping it to Production alone leaves Preview ` +
+      `builds falling back to localhost.`,
+  );
+}
+
+const RAW_API_BASE = (RAW_API_BASE_ENV ?? "http://localhost:3030/api/v1").replace(
+  /\/$/,
+  "",
+);
+
+/**
+ * A misconfigured base otherwise surfaces six retries deep as an opaque
+ * "Failed to parse URL from NEXT_PUBLIC_API_BASE_URL/handout" (2026-09-27: the
+ * variable's own name had been pasted into Vercel's *value* field). Fail at
+ * import instead, naming the cause.
+ */
+function assertAbsolute(base: string): string {
+  try {
+    new URL(base);
+    return base;
+  } catch {
+    throw new Error(
+      `NEXT_PUBLIC_API_BASE_URL is not an absolute URL: ${JSON.stringify(base)}. ` +
+        `Expected e.g. https://api.vuexamprep.com/api/v1 — check the Vercel ` +
+        `environment variable's value, not just its name.`,
+    );
+  }
+}
+
+export const API_BASE = assertAbsolute(RAW_API_BASE);
 
 /** Content changes rarely; refresh once a day without a redeploy. */
 export const REVALIDATE_SECONDS = 86_400;
