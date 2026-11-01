@@ -1,6 +1,11 @@
 import type { NextConfig } from "next";
 import { goneRedirects } from "./app/data/goneUrls";
 
+/** Throw from an expression position, so a bad config fails with a real message. */
+function raise(message: string): never {
+  throw new Error(message);
+}
+
 /**
  * Security headers applied to every route. CSP is intentionally deferred to
  * avoid breaking the Google OAuth flow; the remaining headers are safe and
@@ -59,7 +64,20 @@ const nextConfig: NextConfig = {
       // hard 404 when the backend stopped serving their content. A 301 moves what
       // ranking equity remains to the nearest live page instead of discarding it.
       // See app/data/goneUrls.ts for how the list was measured and mapped.
-      ...goneRedirects.map(({ from, to }) => ({
+      //
+      // Guarded because next.config.ts is COMPILED AND EXECUTED before Next runs
+      // its TypeScript check — so a bad import here never reaches the type
+      // checker. It surfaces instead as a runtime
+      // "Cannot read properties of undefined (reading 'map')" at
+      // next.config.compiled.js, which names neither the file nor the symbol.
+      // (This happened on 2026-11-01: the export had been renamed to
+      // `geRedirects`.) Fail with the real reason instead.
+      ...(Array.isArray(goneRedirects)
+        ? goneRedirects
+        : raise(
+            "goneRedirects is not exported as an array from app/data/goneUrls.ts",
+          )
+      ).map(({ from, to }) => ({
         source: from,
         destination: to,
         permanent: true,

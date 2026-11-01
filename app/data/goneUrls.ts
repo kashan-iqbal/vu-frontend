@@ -20,7 +20,7 @@ export interface GoneRedirect {
   to: string;
 }
 
-export const geRedirects: GoneRedirect[] = [
+export const goneRedirects: GoneRedirect[] = [
   {
     from: "/handout/PSY513/finalterm",
     to: "/courses",
