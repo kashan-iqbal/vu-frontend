@@ -1,8 +1,9 @@
 import type { MetadataRoute } from "next";
 import { siteConfig } from "./lib/seo/site";
 import { blogPosts } from "./data/blog";
-import { listHandoutKeys } from "./lib/api/handout.server";
+import { listHandoutKeys, getHandoutContent } from "./lib/api/handout.server";
 import { listPastQuizKeys } from "./lib/api/pastQuiz.server";
+import { splitHandout, buildHandoutPages } from "./lib/handoutSections";
 
 /**
  * Dynamic XML sitemap covering only publicly indexable pages (marketing, blog,
@@ -36,6 +37,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
   const staticRoutes: MetadataRoute.Sitemap = [
     { url: `${base}/`, changeFrequency: "weekly", priority: 1 },
+    // The public course directory — the crawl entry point into all 436 handout and
+    // past-paper pages, which had zero inbound internal links before 2026-10-31.
+    // High priority because it is now the hub the whole content surface hangs off.
+    { url: `${base}/courses`, changeFrequency: "weekly", priority: 0.9 },
     { url: `${base}/features`, changeFrequency: "monthly", priority: 0.8 },
     { url: `${base}/about`, changeFrequency: "monthly", priority: 0.6 },
     {
@@ -66,6 +71,26 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
+  // Long handouts are split into ~50 KB parts, each its own indexable URL — the
+  // single-page template averaged 466 KB of HTML and the heaviest pages could not
+  // finish loading under Lighthouse's mobile throttling at all. Parts carry a
+  // LOWER priority than their index page: the index is the canonical entry point
+  // for "<CODE> handouts" queries, while a part targets its own narrower topic.
+  // Handouts already small enough are not split and contribute no extra URLs.
+  const handoutPartRoutes: MetadataRoute.Sitemap = (
+    await Promise.all(
+      handoutKeys.map(async (k) => {
+        const handout = await getHandoutContent(k.code, k.examType);
+        if (!handout?.content) return [];
+        return buildHandoutPages(splitHandout(handout.content)).map((part) => ({
+          url: `${base}/handout/${k.code}/${k.examType}/${part.slug}`,
+          changeFrequency: "monthly" as const,
+          priority: 0.5,
+        }));
+      }),
+    )
+  ).flat();
+
   // Only pairs that actually have past-paper MCQs (count-gated server-side), so we
   // never submit an empty past-papers page.
   const pastPaperKeys = await listPastQuizKeys();
@@ -86,5 +111,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     );
   }
 
-  return [...staticRoutes, ...blogRoutes, ...handoutRoutes, ...pastPaperRoutes];
+  return [
+    ...staticRoutes,
+    ...blogRoutes,
+    ...handoutRoutes,
+    ...handoutPartRoutes,
+    ...pastPaperRoutes,
+  ];
 }

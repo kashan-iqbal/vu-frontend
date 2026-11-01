@@ -28,6 +28,7 @@ import {
   playCorrect,
   playWrong,
   preloadQuizSounds,
+  unlockQuizSounds,
   useSoundEnabled,
   setSoundEnabled,
 } from "@/lib/sound";
@@ -35,18 +36,20 @@ import { InlineFeedback } from "@/components/feedback/InlineFeedback";
 import ReadinessCard from "@/components/ReadinessCard";
 import CrashPlanCard from "@/components/CrashPlanCard";
 import {
+  gradeAnswer,
   submitQuiz,
+  type GradedAnswer,
   type QuizResult,
-  type QuizSubmissionItem,
 } from "@/lib/api/quiz.api";
 
+// What the browser is given. No `correctAnswer`, no `explanation` — both arrive
+// per answer from the server once the student has committed to a choice, so the
+// answer key is never sitting in the page for anyone to read.
 export type Question = {
   _id?: string;
   id: number;
   question: string;
   options: string[];
-  correctAnswer: number;
-  explanation: string;
   topic_name: string;
   code: string;
   type: string;
@@ -63,17 +66,23 @@ export default function QuizTaker({
   detail,
   onRestart,
   quizCode,
+  attemptId,
 }: {
   questions: Question[];
   detail: QuizDetail;
   onRestart: () => void;
   quizCode: string;
+  attemptId: string;
 }) {
   const router = useRouter();
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<
     Record<number, number>
   >({});
+  // The server's verdict per question index — correctness, which option was
+  // right, and the explanation. Populated as each answer is graded.
+  const [graded, setGraded] = useState<Record<number, GradedAnswer>>({});
+  const [gradingIndex, setGradingIndex] = useState<number | null>(null);
   const [showResults, setShowResults] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState<QuizResult | null>(null);
@@ -91,31 +100,29 @@ export default function QuizTaker({
 
   const currentQuestion = questions[currentQuestionIndex];
   const currentSelected = selectedAnswers[currentQuestionIndex];
-  const isAnswered = currentSelected !== undefined;
-  const currentCorrect = currentSelected === currentQuestion.correctAnswer;
+  const currentGrade = graded[currentQuestionIndex];
+  // "Answered" means the server has graded it — that is what unlocks the reveal.
+  const isAnswered = currentGrade !== undefined;
+  const isGrading = gradingIndex === currentQuestionIndex;
+  const currentCorrect = currentGrade?.correct === true;
   const isLast = currentQuestionIndex === questions.length - 1;
 
-  const answeredCount = Object.keys(selectedAnswers).length;
+  const answeredCount = Object.keys(graded).length;
   const allAnswered = answeredCount === questions.length;
   // Progress reflects how many MCQs are actually answered (not just visited).
   const progress = Math.round((answeredCount / questions.length) * 100);
 
-  const localCorrectCount = Object.entries(selectedAnswers).filter(
-    ([index, answer]) => questions[parseInt(index)].correctAnswer === answer,
-  ).length;
+  const localCorrectCount = Object.values(graded).filter((g) => g.correct)
+    .length;
 
   // ── Submit the whole quiz to the backend ──
   const finishQuiz = useCallback(async () => {
     if (submitting || showResults) return;
     setSubmitting(true);
 
-    const payload: QuizSubmissionItem[] = questions.map((q, i) => ({
-      ...q,
-      selectedOption: selectedAnswers[i] ?? -1, // -1 = left unanswered (e.g. timeout)
-    }));
-
     try {
-      const res = await submitQuiz(payload);
+      // Only the attempt id goes up; the server scores from its own record.
+      const res = await submitQuiz(attemptId);
       setResult(res);
     } catch (e) {
       const err = e as {
@@ -131,7 +138,7 @@ export default function QuizTaker({
       setSubmitting(false);
       setShowResults(true);
     }
-  }, [submitting, showResults, questions, selectedAnswers]);
+  }, [submitting, showResults, attemptId]);
 
   // ── Countdown timer → auto-submit when it hits 0 ──
   useEffect(() => {
@@ -149,22 +156,58 @@ export default function QuizTaker({
     setCurrentQuestionIndex(index);
   };
 
-  const handleAnswerSelect = (optionIndex: number) => {
-    // Lock the answer once chosen so the correct/wrong reveal stays stable.
+  const handleAnswerSelect = async (optionIndex: number) => {
+    // Lock the answer once chosen so the correct/wrong reveal stays stable, and
+    // ignore taps while a grade is in flight.
     if (selectedAnswers[currentQuestionIndex] !== undefined) return;
-    setSelectedAnswers((prev) => ({
-      ...prev,
-      [currentQuestionIndex]: optionIndex,
-    }));
-    // Audio cue alongside the visual reveal. Fired straight from the click so
-    // the browser lets the AudioContext start.
-    if (optionIndex === currentQuestion.correctAnswer) {
-      playCorrect();
-    } else {
-      playWrong();
+    if (gradingIndex !== null) return;
+
+    const index = currentQuestionIndex;
+    const question = questions[index];
+
+    setSelectedAnswers((prev) => ({ ...prev, [index]: optionIndex }));
+    setGradingIndex(index);
+
+    // Approve audio while the click gesture is still live — the cue itself can
+    // only be chosen after the server replies, which is too late for Safari.
+    unlockQuizSounds();
+
+    try {
+      const verdict = await gradeAnswer({
+        attemptId,
+        id: question.id,
+        selectedOption: optionIndex,
+      });
+
+      setGraded((prev) => ({ ...prev, [index]: verdict }));
+
+      if (verdict.correct) {
+        playCorrect();
+      } else {
+        playWrong();
+      }
+
+      // On phones the explanation lives in a popup — open it once graded.
+      if (isMobile && index === currentQuestionIndex) setExplanationOpen(true);
+    } catch (e) {
+      const err = e as {
+        response?: { data?: { message?: string } };
+        message?: string;
+      };
+      // Release the lock so the student can try the answer again.
+      setSelectedAnswers((prev) => {
+        const next = { ...prev };
+        delete next[index];
+        return next;
+      });
+      toast.error(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Couldn't check that answer. Please try again.",
+      );
+    } finally {
+      setGradingIndex(null);
     }
-    // On phones the explanation lives in a popup — open it on selection.
-    if (isMobile) setExplanationOpen(true);
   };
 
   const handleNext = () => {
@@ -379,7 +422,9 @@ export default function QuizTaker({
           <div className="space-y-3">
             {currentQuestion.options.map((option, index) => {
               const letter = String.fromCharCode(65 + index);
-              const isCorrect = index === currentQuestion.correctAnswer;
+              // Which option was right is only known once the server says so.
+              const isCorrect =
+                isAnswered && index === currentGrade.correctOption;
               const isChosen = currentSelected === index;
 
               let optionCls =
@@ -405,10 +450,10 @@ export default function QuizTaker({
                 <button
                   key={index}
                   onClick={() => handleAnswerSelect(index)}
-                  disabled={isAnswered}
+                  disabled={isAnswered || isGrading}
                   className={`flex w-full items-center gap-3 rounded-xl border-2 p-3 text-left transition-all sm:p-4 ${optionCls} ${
                     isAnswered ? "cursor-default" : "cursor-pointer"
-                  }`}
+                  } ${isGrading && !isChosen ? "opacity-60" : ""}`}
                 >
                   <span
                     className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-sm font-bold ${badgeCls}`}
@@ -418,6 +463,9 @@ export default function QuizTaker({
                   <span className="flex-1 text-sm font-medium text-slate-800 sm:text-base">
                     {option}
                   </span>
+                  {isGrading && isChosen && (
+                    <Loader2 className="h-5 w-5 shrink-0 animate-spin text-blue-900" />
+                  )}
                   {isAnswered && isCorrect && (
                     <CheckCircle className="h-5 w-5 shrink-0 text-green-600" />
                   )}
@@ -445,7 +493,7 @@ export default function QuizTaker({
               </div>
               <p className="text-sm leading-relaxed text-blue-900">
                 <span className="font-semibold">Explanation: </span>
-                {currentQuestion.explanation}
+                {currentGrade.explanation}
               </p>
             </div>
           )}
@@ -465,58 +513,64 @@ export default function QuizTaker({
           )}
         </div>
 
-        {/* ── Explanation popup (mobile) ── */}
-        <Dialog open={explanationOpen} onOpenChange={setExplanationOpen}>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader>
-              <DialogTitle
-                className={currentCorrect ? "text-green-700" : "text-red-700"}
-              >
-                <span className="flex items-center gap-2">
-                  {currentCorrect ? (
-                    <CheckCircle className="h-5 w-5" />
-                  ) : (
-                    <XCircle className="h-5 w-5" />
-                  )}
-                  {currentCorrect ? "Correct!" : "You selected the wrong option"}
-                </span>
-              </DialogTitle>
-              <DialogDescription className="sr-only">
-                Answer explanation
-              </DialogDescription>
-            </DialogHeader>
-
-            <div className="space-y-3 text-sm leading-relaxed text-slate-700">
-              {!currentCorrect && (
-                <p>
-                  <span className="font-semibold text-green-700">
-                    Correct answer:{" "}
+        {/* ── Explanation popup (mobile) ──
+            Only mounted once a grade exists, so it can never open on an
+            ungraded question with nothing to show. */}
+        {isAnswered && (
+          <Dialog open={explanationOpen} onOpenChange={setExplanationOpen}>
+            <DialogContent className="sm:max-w-md">
+              <DialogHeader>
+                <DialogTitle
+                  className={currentCorrect ? "text-green-700" : "text-red-700"}
+                >
+                  <span className="flex items-center gap-2">
+                    {currentCorrect ? (
+                      <CheckCircle className="h-5 w-5" />
+                    ) : (
+                      <XCircle className="h-5 w-5" />
+                    )}
+                    {currentCorrect
+                      ? "Correct!"
+                      : "You selected the wrong option"}
                   </span>
-                  {currentQuestion.options[currentQuestion.correctAnswer]}
-                </p>
-              )}
-              <p>
-                <span className="font-semibold text-blue-900">
-                  Explanation:{" "}
-                </span>
-                {currentQuestion.explanation}
-              </p>
-            </div>
+                </DialogTitle>
+                <DialogDescription className="sr-only">
+                  Answer explanation
+                </DialogDescription>
+              </DialogHeader>
 
-            <DialogClose asChild>
-              <Button className="w-full bg-blue-900 font-semibold text-white hover:bg-blue-800">
-                Got it
-              </Button>
-            </DialogClose>
-          </DialogContent>
-        </Dialog>
+              <div className="space-y-3 text-sm leading-relaxed text-slate-700">
+                {!currentCorrect && currentGrade.correctOption >= 0 && (
+                  <p>
+                    <span className="font-semibold text-green-700">
+                      Correct answer:{" "}
+                    </span>
+                    {currentQuestion.options[currentGrade.correctOption]}
+                  </p>
+                )}
+                <p>
+                  <span className="font-semibold text-blue-900">
+                    Explanation:{" "}
+                  </span>
+                  {currentGrade.explanation}
+                </p>
+              </div>
+
+              <DialogClose asChild>
+                <Button className="w-full bg-blue-900 font-semibold text-white hover:bg-blue-800">
+                  Got it
+                </Button>
+              </DialogClose>
+            </DialogContent>
+          </Dialog>
+        )}
 
         {/* ── Question navigator dots ──
             Mobile: a single swipeable strip (edge-to-edge) so any number of
             questions stays tidy. sm+: wraps onto multiple rows. */}
         <div className="mt-6 -mx-4 flex gap-2 overflow-x-auto px-4 pb-2 [scrollbar-width:none] sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0 [&::-webkit-scrollbar]:hidden">
           {questions.map((_, index) => {
-            const answered = selectedAnswers[index] !== undefined;
+            const answered = graded[index] !== undefined;
             const active = index === currentQuestionIndex;
             return (
               <button

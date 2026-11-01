@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { JsonLd } from "@/components/JsonLd";
+import Footer from "@/components/Footer";
 import { getCourseByCode, getRelatedCourses } from "@/lib/courses";
 import {
   getPastMcqs,
@@ -226,6 +227,11 @@ export default async function Page({
           </ul>
         </nav>
       )}
+
+      {/* Site-wide internal link block. See the matching note on the handout
+          template: neither content template rendered a footer, which is why every
+          indexable money page was orphaned. */}
+      <Footer />
     </>
   );
 }

@@ -4,16 +4,21 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, ArrowRight, Loader2, Upload } from "lucide-react";
-import QuizTaker, { Question } from "./QuizTaker";
+import QuizTaker from "./QuizTaker";
 import { coursesBySubject } from "../data/subject";
-import { getQuizByCode } from "@/lib/api/quiz.api";
+import { getQuizByCode, type DeliveredQuiz } from "@/lib/api/quiz.api";
 
 type QuizType = "midterm" | "finalterm";
+
+// How many MCQs a sitting serves. Mirrors QUIZ_LENGTH in the backend's
+// quiz.service.ts and is only a pre-flight estimate for the intro screen — once
+// the quiz loads, the real delivered count is used instead.
+const EXPECTED_QUESTIONS = 15;
 
 export default function QuizClient({ code }: { code: string }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
-  const [questions, setQuestions] = useState<Question[] | null>(null);
+  const [quiz, setQuiz] = useState<DeliveredQuiz | null>(null);
 
   // ── Modal state ──
   const [showModal, setShowModal] = useState(false);
@@ -32,7 +37,9 @@ export default function QuizClient({ code }: { code: string }) {
     passScore: 70,
     durationMinutes: 15,
     description: `Test your knowledge on ${currentCourse?.title} with this quiz! Get instant feedback and detailed explanations for each question. Perfect for exam prep and self-assessment.`,
-    totalQuestions: 10,
+    // The intro card used to advertise 10 questions while the API served 15.
+    // Show what was actually delivered once we have it.
+    totalQuestions: quiz?.questions.length ?? EXPECTED_QUESTIONS,
   };
 
   // ── Open modal (reset state) ──
@@ -58,7 +65,7 @@ export default function QuizClient({ code }: { code: string }) {
 
     try {
       const data = await getQuizByCode(quizCode);
-      setQuestions(data);
+      setQuiz(data);
       setShowModal(false);
     } catch (e) {
       const err = e as {
@@ -77,12 +84,15 @@ export default function QuizClient({ code }: { code: string }) {
   };
 
   // ── Once questions loaded → hand off ──
-  if (questions) {
+  // `attemptId` is the server-side record of this sitting; QuizTaker needs it to
+  // grade each answer and to submit, since it no longer holds the answer key.
+  if (quiz) {
     return (
       <QuizTaker
-        questions={questions}
+        questions={quiz.questions}
+        attemptId={quiz.attemptId}
         detail={detail}
-        onRestart={() => setQuestions(null)}
+        onRestart={() => setQuiz(null)}
         quizCode={`${selectedType}-${code}`}
       />
     );

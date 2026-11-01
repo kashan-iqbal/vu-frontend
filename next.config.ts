@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { goneRedirects } from "./app/data/goneUrls";
 
 /**
  * Security headers applied to every route. CSP is intentionally deferred to
@@ -54,6 +55,15 @@ const nextConfig: NextConfig = {
         destination: "https://vuexamprep.com/:path*",
         permanent: true,
       },
+      // 73 handout URLs that earned Google impressions and then started returning a
+      // hard 404 when the backend stopped serving their content. A 301 moves what
+      // ranking equity remains to the nearest live page instead of discarding it.
+      // See app/data/goneUrls.ts for how the list was measured and mapped.
+      ...goneRedirects.map(({ from, to }) => ({
+        source: from,
+        destination: to,
+        permanent: true,
+      })),
     ];
   },
 };

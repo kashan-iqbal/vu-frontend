@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { canonicalCourseCode } from "@/lib/courseCode";
+import { handoutPreferredTerm } from "@/data/handoutTerms";
 
 /**
  * Canonicalise the course-code segment of the public content URLs.
@@ -24,6 +25,36 @@ export function middleware(req: NextRequest) {
   // /handout/<code>[/<examType>] and /past-papers/<code>/<examType>
   const match = /^\/(handout|past-papers)\/([^/]+)(\/.*)?$/.exec(pathname);
   if (!match) return NextResponse.next();
+
+  // ── Forward the bare /handout/<CODE> to its term page with a REAL 308 ──
+  //
+  // The page itself cannot do this reliably: it has to know which term exists,
+  // and awaiting the API before redirect() lets Next stream the <head> first, so
+  // the response is already committed as 200 and the redirect degrades to a
+  // client-side one. That is what put 141 URLs in Search Console's
+  // "Excluded by 'noindex' tag" bucket — see app/handout/[code]/page.tsx.
+  //
+  // Middleware runs BEFORE any rendering, so nothing has been streamed yet and a
+  // genuine 308 is possible. The term comes from a build-time map, so there is no
+  // request-time API call to lose the race against.
+  //
+  // A code absent from the map falls through to the SSG page, which still forwards
+  // correctly (just client-side) — so a stale map degrades, it never breaks.
+  if (match[1] === "handout" && !match[3]) {
+    let bare: string;
+    try {
+      bare = decodeURIComponent(match[2]);
+    } catch {
+      return NextResponse.next();
+    }
+    const code = canonicalCourseCode(bare);
+    const term = handoutPreferredTerm[code];
+    if (term) {
+      const url = req.nextUrl.clone();
+      url.pathname = `/handout/${encodeURIComponent(code)}/${term}`;
+      return NextResponse.redirect(url, 308);
+    }
+  }
 
   const [, section, rawCode, rest = ""] = match;
 

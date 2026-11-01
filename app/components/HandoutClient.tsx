@@ -14,7 +14,7 @@ type Term = "midterm" | "finalterm";
 
 // Give each heading a stable slug id so crash-plan study blocks can deep-link to a
 // section (#anchor). scroll-mt keeps the target clear of any sticky chrome.
-const heading = (Tag: "h1" | "h2" | "h3" | "h4") => {
+const heading = (Tag: "h2" | "h3" | "h4" | "h5") => {
   const H = ({ children, ...props }: ComponentPropsWithoutRef<typeof Tag>) => (
     <Tag id={slugify(headingText(children))} className="scroll-mt-24" {...props}>
       {children}
@@ -24,11 +24,17 @@ const heading = (Tag: "h1" | "h2" | "h3" | "h4") => {
   return H;
 };
 
+// Handout markdown routinely opens with its own `# Title`, and some documents use
+// several. Rendered as real <h1>s those stacked on top of the page's own <h1>, so
+// live pages carried 2-3 of them (measured 2026-10-31: 2 on CS201/finalterm, 3 on
+// MGT504/midterm). A document should have exactly one <h1> — the page's — so every
+// markdown level is demoted one step. Anchors are unaffected: the id still comes
+// from slugify(), so crash-plan deep links keep working.
 const markdownComponents = {
-  h1: heading("h1"),
-  h2: heading("h2"),
-  h3: heading("h3"),
-  h4: heading("h4"),
+  h1: heading("h2"),
+  h2: heading("h3"),
+  h3: heading("h4"),
+  h4: heading("h5"),
 };
 
 export default function HandoutClient({

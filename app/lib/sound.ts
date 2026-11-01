@@ -56,6 +56,33 @@ export function preloadQuizSounds() {
   if (!wrongEl) wrongEl = load(WRONG_SRC);
 }
 
+/**
+ * Mark both clips as gesture-approved, synchronously inside a click handler.
+ *
+ * Which cue to play is now decided by the server, so the actual `play()` happens
+ * after an await and is no longer part of the click's call stack — Safari in
+ * particular blocks that. Starting and immediately pausing each element while the
+ * gesture is still live satisfies the autoplay policy, so the later play works.
+ */
+export function unlockQuizSounds() {
+  if (!isSoundEnabled()) return;
+  preloadQuizSounds();
+  for (const el of [correctEl, wrongEl]) {
+    if (!el) continue;
+    try {
+      void el
+        .play()
+        .then(() => {
+          el.pause();
+          el.currentTime = 0;
+        })
+        .catch(() => {});
+    } catch {
+      // ignore
+    }
+  }
+}
+
 export function playCorrect() {
   if (!isSoundEnabled()) return;
   preloadQuizSounds();

@@ -1,10 +1,14 @@
 import Link from "next/link";
 import { Logo } from "./Logo";
 
+// "Courses" MUST point at /courses (public, indexable), not /course (singular) —
+// that one is behind AuthGuard, carries robots:noindex from its route group and is
+// Disallow-ed in robots.txt, so linking to it leaked crawl budget into a dead end
+// and gave the content surface no indexable hub.
 const LINKS = {
   Product: [
     { label: "Features", href: "/features" },
-    { label: "Courses", href: "/course" },
+    { label: "All VU courses", href: "/courses" },
   ],
   Company: [
     { label: "About", href: "/about" },

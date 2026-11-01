@@ -1,6 +1,7 @@
 export const ENDPOINTS = {
   quiz: {
     getByCode: (code: string) => `/quiz/${code}`,
+    answer: "/quiz/answer",
     submitQuiz: "/quiz/submitQuiz",
   },
   topicReview: {

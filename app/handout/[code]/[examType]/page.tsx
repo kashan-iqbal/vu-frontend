@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import HandoutClient from "@/components/HandoutClient";
+import HandoutAnchorForwarder from "@/components/HandoutAnchorForwarder";
+import Footer from "@/components/Footer";
 import { JsonLd } from "@/components/JsonLd";
 import { getCourseByCode, getRelatedCourses } from "@/lib/courses";
 import { tryListPastQuizKeys } from "@/lib/api/pastQuiz.server";
@@ -14,6 +16,11 @@ import {
 } from "@/lib/api/handout.server";
 import { siteConfig, absoluteUrl } from "@/lib/seo/site";
 import { canonicalCourseCode } from "@/lib/courseCode";
+import {
+  splitHandout,
+  buildHandoutPages,
+  anchorIndex,
+} from "@/lib/handoutSections";
 
 const termLabel = (t: ExamTypeValue) =>
   t === "midterm" ? "Midterm" : "Final Term";
@@ -117,6 +124,9 @@ export default async function Page({
   const otherTerm = EXAM_TYPES.find((t) => t !== examType) as ExamTypeValue;
   const related = getRelatedCourses(codeUpper, 6);
 
+  // Empty when the handout already fits in one page — it then renders in full.
+  const handoutPages = buildHandoutPages(splitHandout(handout.content));
+
   // Link to past papers only when they exist (that page now returns a hard 404 when
   // they don't). Deliberately the LENIENT lister: this decides a link, not
   // indexability, so an API hiccup must drop the link rather than fail the render.
@@ -190,7 +200,71 @@ export default async function Page({
         )}
       </div>
 
-      <HandoutClient code={codeUpper} examType={examType} initialData={handout} />
+      {/* ── Split handouts show CONTENTS here; the text lives on part pages ──
+          This template averaged 466 KB of HTML (worst: 1.59 MB) and two of four
+          pages tested could not finish loading in Lighthouse at all. Long handouts
+          are now grouped into ~50 KB parts, so this page becomes the index.
+          Handouts already small enough are rendered in full, exactly as before. */}
+      {handoutPages.length > 0 ? (
+        <>
+          <HandoutAnchorForwarder
+            basePath={`/handout/${codeUpper}/${examType}`}
+            anchorMap={anchorIndex(handoutPages)}
+          />
+
+          <nav
+            aria-label={`${codeUpper} handout contents`}
+            className="mx-auto max-w-3xl px-4 pb-12 pt-8"
+          >
+            <h2 className="text-lg font-semibold text-blue-900">
+              {codeUpper} {label.toLowerCase()} handout — contents
+            </h2>
+            <p className="mt-2 text-sm text-slate-500">
+              Split into {handoutPages.length} parts so each one loads fast on
+              mobile data.
+            </p>
+
+            <ol className="mt-5 space-y-3">
+              {handoutPages.map((part, i) => (
+                <li key={part.slug}>
+                  <a
+                    href={`/handout/${codeUpper}/${examType}/${part.slug}`}
+                    className="block rounded-xl border border-slate-200 p-4 transition-colors hover:border-teal-300 hover:bg-teal-50"
+                  >
+                    <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Part {i + 1}
+                    </span>
+                    <span className="mt-1 block font-medium text-blue-900">
+                      {part.title}
+                    </span>
+                    {part.sectionTitles.length > 1 && (
+                      <span className="mt-1 block text-sm text-slate-500">
+                        {part.sectionTitles.slice(0, 4).join(" · ")}
+                        {part.sectionTitles.length > 4
+                          ? ` · +${part.sectionTitles.length - 4} more`
+                          : ""}
+                      </span>
+                    )}
+                  </a>
+                </li>
+              ))}
+            </ol>
+
+            <a
+              href={`/handout/${codeUpper}/${examType}/${handoutPages[0].slug}`}
+              className="mt-6 inline-flex items-center gap-2 rounded-lg bg-blue-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-800"
+            >
+              Start reading — {handoutPages[0].title}
+            </a>
+          </nav>
+        </>
+      ) : (
+        <HandoutClient
+          code={codeUpper}
+          examType={examType}
+          initialData={handout}
+        />
+      )}
 
       {hasOtherTerm && (
         <div className="mx-auto max-w-3xl px-4 pb-6 text-sm text-slate-500">
@@ -227,6 +301,13 @@ export default async function Page({
           </ul>
         </nav>
       )}
+
+      {/* The footer is the site-wide internal link block, and this template never
+          had one — measured 2026-10-31, zero <footer> tags on a live handout page.
+          `Footer` is imported per page rather than living in a shared layout, and
+          the two content templates both missed it, so all 436 indexable money pages
+          lacked the one component that spreads links across the site. */}
+      <Footer />
     </>
   );
 }

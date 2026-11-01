@@ -2,7 +2,6 @@ import { Button } from "@/components/ui/button";
 import Image from "next/image";
 import {
   BookOpen,
-  Brain,
   BarChart3,
   MessageSquare,
   Zap,
@@ -18,13 +17,10 @@ import Testimonials from "./components/Testimonials";
  * Features overview and call-to-action
  */
 export default function Landing() {
+  // NOTE: the "AI-Powered Chat" card was removed — the /ai-chat route it pointed
+  // at was never wired to a backend, so the landing page was advertising a
+  // feature that did not exist. Re-add it only when the chat actually ships.
   const features = [
-    {
-      icon: Brain,
-      title: "AI-Powered Chat",
-      description:
-        "Get instant answers to your exam preparation questions with our intelligent AI assistant",
-    },
     {
       icon: BarChart3,
       title: "Smart MCQ Generator",
